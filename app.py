@@ -9,14 +9,22 @@ import io
 import base64
 import os
 import json
+import zipfile
+from datetime import datetime
+import shutil
 
 app = FastAPI(title="YOLO Multi-Class Annotator")
 
 # Crear carpeta para archivos estáticos si no existe
 os.makedirs("static", exist_ok=True)
 os.makedirs("annotations", exist_ok=True)
-os.makedirs("annotations/images", exist_ok=True)
-os.makedirs("annotations/labels", exist_ok=True)
+
+# Función para crear estructura de sesión
+def create_session_structure(session_name):
+    session_path = f"annotations/{session_name}"
+    os.makedirs(f"{session_path}/images", exist_ok=True)
+    os.makedirs(f"{session_path}/labels", exist_ok=True)
+    return session_path
 
 # Clases predefinidas con colores
 CLASSES = {
@@ -58,19 +66,23 @@ def image_to_base64(pil_image):
 async def save_annotations(
     annotations: str = Form(...),
     filename: str = Form(...),
+    session_name: str = Form(...),
     image_width: int = Form(...),
     image_height: int = Form(...),
     image_data: str = Form(...)
 ):
-    """Guardar anotaciones en formato YOLO normalizado e imagen con numeración automática"""
+    """Guardar anotaciones en formato YOLO normalizado e imagen con sesiones"""
     try:
         annotations_data = json.loads(annotations)
         
-        # Encontrar el siguiente número disponible
-        def get_next_filename(base_filename):
+        # Crear estructura de sesión
+        session_path = create_session_structure(session_name)
+        
+        # Encontrar el siguiente número disponible en la sesión
+        def get_next_filename(base_filename, session_path):
             # Verificar si existe el archivo base
-            image_path = f"annotations/images/{base_filename}.jpg"
-            labels_path = f"annotations/labels/{base_filename}.txt"
+            image_path = f"{session_path}/images/{base_filename}.jpg"
+            labels_path = f"{session_path}/labels/{base_filename}.txt"
             
             if not os.path.exists(image_path) and not os.path.exists(labels_path):
                 return base_filename
@@ -79,15 +91,15 @@ async def save_annotations(
             counter = 1
             while True:
                 numbered_filename = f"{base_filename}_{counter}"
-                image_path = f"annotations/images/{numbered_filename}.jpg"
-                labels_path = f"annotations/labels/{numbered_filename}.txt"
+                image_path = f"{session_path}/images/{numbered_filename}.jpg"
+                labels_path = f"{session_path}/labels/{numbered_filename}.txt"
                 
                 if not os.path.exists(image_path) and not os.path.exists(labels_path):
                     return numbered_filename
                 counter += 1
         
         # Obtener nombre único
-        unique_filename = get_next_filename(filename)
+        unique_filename = get_next_filename(filename, session_path)
         
         # Guardar en formato YOLO (.txt) - NORMALIZADO
         yolo_content = []
@@ -110,7 +122,7 @@ async def save_annotations(
             yolo_content.append(yolo_line)
         
         # Guardar archivo de anotaciones YOLO en /labels/
-        labels_file = f"annotations/labels/{unique_filename}.txt"
+        labels_file = f"{session_path}/labels/{unique_filename}.txt"
         with open(labels_file, "w") as f:
             f.write("\n".join(yolo_content))
             
@@ -120,7 +132,7 @@ async def save_annotations(
             image_data = image_data.split(',')[1]
         
         image_bytes = base64.b64decode(image_data)
-        image_file = f"annotations/images/{unique_filename}.jpg"
+        image_file = f"{session_path}/images/{unique_filename}.jpg"
         
         # Guardar imagen como JPG
         with open(image_file, "wb") as f:
@@ -128,11 +140,12 @@ async def save_annotations(
             
         return {
             "success": True, 
-            "message": f"Dataset guardado como '{unique_filename}': {len(annotations_data)} objetos",
+            "message": f"Dataset guardado en sesión '{session_name}' como '{unique_filename}': {len(annotations_data)} objetos",
             "files": {
                 "image": image_file,
                 "labels": labels_file
             },
+            "session_name": session_name,
             "original_name": filename,
             "unique_name": unique_filename,
             "yolo_format": yolo_content
@@ -281,8 +294,45 @@ async def main():
         }
         .two-column {
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 1fr 350px;
             gap: 20px;
+        }
+        .sessions-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .session-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .session-item:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+        }
+        .session-item.selected {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .session-stats {
+            font-size: 12px;
+            color: #666;
+        }
+        .download-btn {
+            background: #17a2b8;
+            font-size: 12px;
+            padding: 5px 10px;
+            margin-top: 5px;
+        }
+        .download-btn:hover {
+            background: #138496;
         }
         .main-panel {
             min-width: 0;
@@ -313,6 +363,12 @@ async def main():
             <div class="main-panel">
                 <form id="imageForm" enctype="multipart/form-data">
                     <div class="controls">
+                        <div class="control-group">
+                            <label for="sessionName">Sesión:</label>
+                            <input type="text" id="sessionName" name="sessionName" placeholder="Nombre de sesión" value="default">
+                            <button type="button" id="refreshSessions">🔄</button>
+                        </div>
+                        
                         <div class="control-group">
                             <label for="imageFile">Imagen:</label>
                             <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
@@ -369,6 +425,14 @@ async def main():
                 <div class="annotations-panel" id="annotationsList">
                     <p>Sin anotaciones aún</p>
                 </div>
+            </div>
+            
+            <div class="sessions-panel">
+                <h3>📁 Sesiones</h3>
+                <div id="sessionsList">
+                    <p>Cargando sesiones...</p>
+                </div>
+                <button onclick="refreshSessions()" class="save-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
             </div>
         </div>
     </div>
@@ -435,6 +499,7 @@ async def main():
             
             const formData = new FormData();
             const imageFile = document.getElementById('imageFile').files[0];
+            const sessionName = document.getElementById('sessionName').value || 'default';
             
             if (!imageFile) {
                 alert('Por favor selecciona una imagen');
@@ -446,6 +511,7 @@ async def main():
             formData.append('x', document.getElementById('xPos').value);
             formData.append('y', document.getElementById('yPos').value);
             formData.append('random_bg', document.getElementById('randomBg').checked);
+            formData.append('session_name', sessionName);
             
             try {
                 const response = await fetch('/generate', {
@@ -456,6 +522,9 @@ async def main():
                 const result = await response.json();
                 displayImage(result.image);
                 clearAnnotations();
+                
+                // Actualizar sesiones después de generar
+                refreshSessions();
             } catch (error) {
                 alert('Error al generar la imagen: ' + error.message);
             }
@@ -618,6 +687,8 @@ async def main():
 
         async function saveAnnotations() {
             const filename = document.getElementById('filename').value;
+            const sessionName = document.getElementById('sessionName').value || 'default';
+            
             if (!filename) {
                 alert('Por favor ingresa un nombre para el archivo');
                 return;
@@ -638,6 +709,7 @@ async def main():
             const formData = new FormData();
             formData.append('annotations', JSON.stringify(annotations));
             formData.append('filename', filename);
+            formData.append('session_name', sessionName);
             formData.append('image_width', canvas.width);
             formData.append('image_height', canvas.height);
             formData.append('image_data', originalImageData); // Usar imagen original sin marcas
@@ -668,6 +740,9 @@ ${result.yolo_format.join('\\n')}
                     
                     // Opcional: limpiar anotaciones después de guardar
                     // clearAnnotations();
+                    
+                    // Actualizar sesiones después de guardar
+                    refreshSessions();
                 } else {
                     alert(`❌ Error: ${result.message}`);
                 }
@@ -687,6 +762,89 @@ ${result.yolo_format.join('\\n')}
 
         // Inicializar al cargar la página
         initializeClassButtons();
+        
+        // Funciones para manejo de sesiones
+        async function refreshSessions() {
+            try {
+                const response = await fetch('/list_sessions');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displaySessions(result.sessions);
+                } else {
+                    alert(`Error al cargar sesiones: ${result.message}`);
+                }
+            } catch (error) {
+                alert('Error al cargar sesiones: ' + error.message);
+            }
+        }
+        
+        function displaySessions(sessions) {
+            const sessionsList = document.getElementById('sessionsList');
+            
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = '<p>No hay sesiones disponibles</p>';
+                return;
+            }
+            
+            sessionsList.innerHTML = sessions.map(session => `
+                <div class="session-item" onclick="selectSession('${session.name}')">
+                    <div><strong>${session.name}</strong></div>
+                    <div class="session-stats">
+                        📷 ${session.images_count} imágenes | 📝 ${session.labels_count} etiquetas
+                    </div>
+                    <button class="download-btn" onclick="downloadSession('${session.name}'); event.stopPropagation();">
+                        💾 Descargar
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        function selectSession(sessionName) {
+            document.getElementById('sessionName').value = sessionName;
+            
+            // Destacar sesión seleccionada
+            document.querySelectorAll('.session-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.session-item').classList.add('selected');
+        }
+        
+        async function downloadSession(sessionName) {
+            try {
+                // Crear enlace de descarga temporal
+                const downloadLink = document.createElement('a');
+                downloadLink.href = `/download_session/${sessionName}`;
+                downloadLink.download = `dataset_${sessionName}.zip`;
+                
+                // Agregar al DOM y hacer click automáticamente
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                
+                // Remover del DOM
+                document.body.removeChild(downloadLink);
+                
+                alert(`🎉 Descargando dataset '${sessionName}' como archivo ZIP
+                
+📦 Estructura YOLO estándar:
+├── images/ (imágenes .jpg)
+└── labels/ (etiquetas .txt)
+
+📁 Archivo: dataset_${sessionName}_YYYYMMDD_HHMMSS.zip
+🎯 Formato listo para entrenamiento YOLO`);
+                
+            } catch (error) {
+                alert('Error al descargar sesión: ' + error.message);
+            }
+        }
+        
+        // Cargar sesiones al inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshSessions();
+        });
+        
+        // Agregar event listener al botón de refresh
+        document.getElementById('refreshSessions')?.addEventListener('click', refreshSessions);
     </script>
 </body>
 </html>
@@ -698,8 +856,12 @@ async def generate_image(
     size: int = Form(320),
     x: int = Form(0),
     y: int = Form(0),
-    random_bg: bool = Form(True)
+    random_bg: bool = Form(True),
+    session_name: str = Form("default")
 ):
+    # Crear estructura de sesión
+    create_session_structure(session_name)
+    
     # Leer imagen subida
     image_bytes = await image.read()
     
@@ -710,7 +872,106 @@ async def generate_image(
     # Convertir a base64
     base64_image = image_to_base64(result_image)
     
-    return {"image": base64_image}
+    return {"image": base64_image, "session_name": session_name}
+
+@app.get("/list_sessions")
+async def list_sessions():
+    """Listar todas las sesiones disponibles"""
+    try:
+        sessions = []
+        annotations_path = "annotations"
+        
+        if os.path.exists(annotations_path):
+            for item in os.listdir(annotations_path):
+                session_path = os.path.join(annotations_path, item)
+                if os.path.isdir(session_path):
+                    # Contar archivos en la sesión
+                    images_count = 0
+                    labels_count = 0
+                    
+                    images_path = os.path.join(session_path, "images")
+                    labels_path = os.path.join(session_path, "labels")
+                    
+                    if os.path.exists(images_path):
+                        images_count = len([f for f in os.listdir(images_path) if f.endswith('.jpg')])
+                    
+                    if os.path.exists(labels_path):
+                        labels_count = len([f for f in os.listdir(labels_path) if f.endswith('.txt')])
+                    
+                    sessions.append({
+                        "name": item,
+                        "images_count": images_count,
+                        "labels_count": labels_count,
+                        "path": session_path
+                    })
+        
+        return {"success": True, "sessions": sessions}
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}
+
+@app.get("/download_session/{session_name}")
+async def download_session(session_name: str):
+    """Descargar sesión completa como archivo ZIP con imágenes y etiquetas en una sola carpeta"""
+    try:
+        session_path = f"annotations/{session_name}"
+        
+        if not os.path.exists(session_path):
+            return {"success": False, "message": f"Sesión '{session_name}' no encontrada"}
+        
+        images_path = f"{session_path}/images"
+        labels_path = f"{session_path}/labels"
+        
+        # Verificar que existan las carpetas
+        if not os.path.exists(images_path) and not os.path.exists(labels_path):
+            return {"success": False, "message": f"No hay archivos en la sesión '{session_name}'"}
+        
+        # Crear archivo ZIP temporal
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"dataset_{session_name}_{timestamp}.zip"
+        zip_path = f"temp/{zip_filename}"
+        
+        # Crear carpeta temporal
+        os.makedirs("temp", exist_ok=True)
+        
+        # Crear ZIP con estructura de carpetas images/ y labels/
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Agregar todas las imágenes en la carpeta images/
+            if os.path.exists(images_path):
+                for file in os.listdir(images_path):
+                    if file.endswith(('.jpg', '.jpeg', '.png')):
+                        file_path = os.path.join(images_path, file)
+                        zipf.write(file_path, f"images/{file}")  # Mantener carpeta images/
+            
+            # Agregar todas las etiquetas en la carpeta labels/
+            if os.path.exists(labels_path):
+                for file in os.listdir(labels_path):
+                    if file.endswith('.txt'):
+                        file_path = os.path.join(labels_path, file)
+                        zipf.write(file_path, f"labels/{file}")  # Mantener carpeta labels/
+        
+        # Devolver el archivo ZIP
+        return FileResponse(
+            path=zip_path,
+            filename=zip_filename,
+            media_type='application/zip'
+        )
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}
+
+@app.get("/cleanup_temp")
+async def cleanup_temp():
+    """Limpiar archivos temporales"""
+    try:
+        temp_path = "temp"
+        if os.path.exists(temp_path):
+            for file in os.listdir(temp_path):
+                file_path = os.path.join(temp_path, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+        return {"success": True, "message": "Archivos temporales limpiados"}
+    except Exception as e:
+        return {"success": False, "message": f"Error: {str(e)}"}
 
 if __name__ == "__main__":
     print("🚀 Iniciando YOLO Image Annotator")
