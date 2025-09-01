@@ -13,7 +13,7 @@ import zipfile
 from datetime import datetime
 import shutil
 
-app = FastAPI(title="YOLO Multi-Class Annotator")
+app = FastAPI(title="YOLO Multi-Class Annotator & Visualizer")
 
 # Crear carpeta para archivos estáticos si no existe
 os.makedirs("static", exist_ok=True)
@@ -39,28 +39,168 @@ CLASSES = {
 def random_color():
     return tuple(random.randint(0, 255) for _ in range(3))
 
-def create_canvas_with_image(image_bytes, size, x, y, change_bg=True):
+def create_canvas_with_image(image_bytes, size, x, y, change_bg=True, max_size=800):
+    """Crear canvas con imagen redimensionada automáticamente"""
     bg_color = random_color() if change_bg else (200, 200, 200)
     canvas = Image.new('RGB', size, bg_color)
     
-    # Cargar imagen subida
+    # Cargar imagen subida (soporta múltiples formatos incluyendo WebP)
     img = Image.open(io.BytesIO(image_bytes))
-    img.thumbnail((size[0], size[1]))
     
-    # Posicionar imagen
-    max_x = size[0] - img.width
-    max_y = size[1] - img.height
-    x = min(max(0, x), max_x)
-    y = min(max(0, y), max_y)
-    canvas.paste(img, (x, y))
+    # Convertir a RGB si es necesario (para WebP con transparencia, etc.)
+    if img.mode in ('RGBA', 'LA', 'P'):
+        # Crear fondo blanco para transparencias
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        if img.mode == 'P':
+            img = img.convert('RGBA')
+        background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+        img = background
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+    
+    # Redimensionar imagen si es muy grande manteniendo aspecto
+    original_width, original_height = img.size
+    
+    # Calcular nuevo tamaño manteniendo proporción
+    if original_width > max_size or original_height > max_size:
+        ratio = min(max_size / original_width, max_size / original_height)
+        new_width = int(original_width * ratio)
+        new_height = int(original_height * ratio)
+        img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    
+    # Centrar imagen si es menor que el canvas
+    canvas_width, canvas_height = size
+    img_width, img_height = img.size
+    
+    # Calcular posición centrada o usar coordenadas proporcionadas
+    if x == 0 and y == 0:  # Auto-centrar
+        paste_x = (canvas_width - img_width) // 2
+        paste_y = (canvas_height - img_height) // 2
+    else:
+        # Usar coordenadas proporcionadas pero asegurar que la imagen esté dentro
+        paste_x = min(x, canvas_width - img_width)
+        paste_y = min(y, canvas_height - img_height)
+    
+    paste_x = max(0, paste_x)
+    paste_y = max(0, paste_y)
+    
+    # Pegar imagen en canvas
+    canvas.paste(img, (paste_x, paste_y))
     
     return canvas
 
 def image_to_base64(pil_image):
     buffer = io.BytesIO()
-    pil_image.save(buffer, format='PNG')
-    img_str = base64.b64encode(buffer.getvalue()).decode()
-    return f"data:image/png;base64,{img_str}"
+    pil_image.save(buffer, format='JPEG', quality=90)
+    img_data = base64.b64encode(buffer.getvalue()).decode()
+    return f"data:image/jpeg;base64,{img_data}"
+
+def hex_to_rgb(hex_color):
+    """Convertir color hex a RGB"""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+def draw_yolo_annotations(image_path, labels_path, max_display_size=800):
+    """Dibujar anotaciones YOLO sobre la imagen con redimensionado automático"""
+    try:
+        # Cargar imagen (soporta WebP y otros formatos)
+        image = Image.open(image_path)
+        
+        # Convertir a RGB si es necesario (para WebP con transparencia, etc.)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            # Crear fondo blanco para transparencias
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
+            image = background
+        elif image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Obtener dimensiones originales
+        original_width, original_height = image.size
+        
+        # Redimensionar para display si es muy grande (manteniendo proporciones para visualización)
+        display_image = image.copy()
+        scale_factor = 1.0
+        
+        if original_width > max_display_size or original_height > max_display_size:
+            scale_factor = min(max_display_size / original_width, max_display_size / original_height)
+            new_width = int(original_width * scale_factor)
+            new_height = int(original_height * scale_factor)
+            display_image = display_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        draw = ImageDraw.Draw(display_image)
+        
+        # Obtener dimensiones de la imagen de display
+        display_width, display_height = display_image.size
+        
+        annotations = []
+        
+        # Leer archivo de etiquetas si existe
+        if os.path.exists(labels_path):
+            with open(labels_path, 'r') as f:
+                for line_num, line in enumerate(f.readlines(), 1):
+                    line = line.strip()
+                    if line:
+                        try:
+                            parts = line.split()
+                            if len(parts) == 5:
+                                class_id = int(parts[0])
+                                x_center = float(parts[1])
+                                y_center = float(parts[2])
+                                width = float(parts[3])
+                                height = float(parts[4])
+                                
+                                # Convertir de coordenadas YOLO a píxeles usando las dimensiones de display
+                                x_center_px = x_center * display_width
+                                y_center_px = y_center * display_height
+                                width_px = width * display_width
+                                height_px = height * display_height
+                                
+                                # Calcular coordenadas del rectángulo
+                                x1 = int(x_center_px - width_px / 2)
+                                y1 = int(y_center_px - height_px / 2)
+                                x2 = int(x_center_px + width_px / 2)
+                                y2 = int(y_center_px + height_px / 2)
+                                
+                                # Obtener color de la clase
+                                color = CLASSES.get(class_id, {"color": "#ffffff", "name": f"clase_{class_id}"})
+                                rgb_color = hex_to_rgb(color["color"])
+                                
+                                # Dibujar rectángulo (más grueso para imágenes grandes)
+                                line_width = max(2, int(3 * scale_factor))
+                                draw.rectangle([x1, y1, x2, y2], outline=rgb_color, width=line_width)
+                                
+                                # Dibujar etiqueta
+                                label_text = f"{color['name']} ({class_id})"
+                                font_size = max(12, int(14 * scale_factor))
+                                text_width = len(label_text) * int(font_size * 0.6)
+                                text_height = int(font_size * 1.2)
+                                
+                                draw.rectangle([x1, y1-text_height, x1+text_width, y1], fill=rgb_color)
+                                draw.text((x1+2, y1-text_height+2), label_text, fill=(255, 255, 255))
+                                
+                                # Guardar información de la anotación
+                                annotations.append({
+                                    "class_id": class_id,
+                                    "class_name": color['name'],
+                                    "bbox": [x1, y1, x2, y2],
+                                    "yolo_coords": [x_center, y_center, width, height],
+                                    "color": color["color"],
+                                    "original_size": [original_width, original_height],
+                                    "display_scale": scale_factor
+                                })
+                                
+                        except (ValueError, IndexError) as e:
+                            print(f"Error en línea {line_num} de {labels_path}: {e}")
+                            continue
+        
+        return display_image, annotations
+    
+    except Exception as e:
+        print(f"Error procesando {image_path}: {e}")
+        return None, []
 
 @app.post("/save_annotations")
 async def save_annotations(
@@ -284,13 +424,132 @@ async def main():
             color: #333;
             margin-bottom: 20px;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
         }
-        .instructions {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 15px;
+        .help-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .help-btn:hover {
+            background: #138496;
+            transform: scale(1.1);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+        }
+        .instructions-content {
+            padding: 40px 30px 30px 30px;
+        }
+        .instructions-content h2 {
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .instructions-content h3 {
+            color: #495057;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .instructions-content ol {
+            padding-left: 20px;
+        }
+        .instructions-content ol li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .instructions-content ul {
+            padding-left: 20px;
+        }
+        .instructions-content ul li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .classes-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .class-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #f8f9fa;
             border-radius: 5px;
-            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .class-item span {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .instructions-content kbd {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #333;
         }
         .two-column {
             display: grid;
@@ -330,9 +589,43 @@ async def main():
             font-size: 12px;
             padding: 5px 10px;
             margin-top: 5px;
+            margin-right: 5px;
         }
         .download-btn:hover {
             background: #138496;
+        }
+        .visualize-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            padding: 5px 10px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        .visualize-btn:hover {
+            background: #218838;
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            padding: 5px 10px;
+            margin-top: 5px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        .session-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
         }
         .main-panel {
             min-width: 0;
@@ -346,17 +639,52 @@ async def main():
 </head>
 <body>
     <div class="container">
-        <h1 class="title">🎯 YOLO Multi-Class Annotator</h1>
+        <h1 class="title">YOLO Multi-Class Annotator
+            <button id="helpBtn" class="help-btn" title="Ver instrucciones">❓</button>
+        </h1>
         
-        <div class="instructions">
-            <strong>Instrucciones:</strong>
-            <ol>
-                <li>Sube tu imagen y genera el fondo</li>
-                <li>Selecciona una clase de objeto</li>
-                <li>Arrastra sobre la imagen para crear una anotación</li>
-                <li>Repite para múltiples objetos</li>
-                <li>Guarda las anotaciones cuando termines</li>
-            </ol>
+        <!-- Modal de Instrucciones -->
+        <div id="instructionsModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>📚 Instrucciones de Uso</h2>
+                <div class="instructions-content">
+                    <h3>🚀 Pasos para anotar:</h3>
+                    <ol>
+                        <li><strong>📤 Sube tu imagen</strong> - Formatos soportados: JPG, PNG, WebP, GIF, BMP</li>
+                        <li><strong>⚙️ Configura parámetros</strong> - Tamaño del canvas, posición, fondo</li>
+                        <li><strong>🖼️ Genera el canvas</strong> - Click en "Generar" para crear el lienzo</li>
+                        <li><strong>🎯 Selecciona una clase</strong> - Elige el tipo de objeto a anotar</li>
+                        <li><strong>🖱️ Arrastra para anotar</strong> - Crea bounding boxes sobre los objetos</li>
+                        <li><strong>🔄 Repite para múltiples objetos</strong> - Anota todos los objetos de la imagen</li>
+                        <li><strong>💾 Guarda las anotaciones</strong> - Formato YOLO estándar para entrenamiento</li>
+                    </ol>
+                    
+                    <h3>🎨 Clases disponibles:</h3>
+                    <div class="classes-preview">
+                        <div class="class-item"><span style="background: #ff0000;"></span> Objeto 1</div>
+                        <div class="class-item"><span style="background: #00ff00;"></span> Objeto 2</div>
+                        <div class="class-item"><span style="background: #0000ff;"></span> Objeto 3</div>
+                        <div class="class-item"><span style="background: #ffff00;"></span> Objeto 4</div>
+                        <div class="class-item"><span style="background: #ff00ff;"></span> Objeto 5</div>
+                        <div class="class-item"><span style="background: #00ffff;"></span> Objeto 6</div>
+                    </div>
+                    
+                    <h3>⚡ Atajos de teclado:</h3>
+                    <ul>
+                        <li><kbd>1-6</kbd> - Seleccionar clase rápida</li>
+                        <li><kbd>Escape</kbd> - Cancelar anotación actual</li>
+                        <li><kbd>Delete</kbd> - Eliminar anotación seleccionada</li>
+                    </ul>
+                    
+                    <h3>📁 Gestión de sesiones:</h3>
+                    <ul>
+                        <li><strong>💾 Descargar:</strong> Obtén un ZIP con formato YOLO listo para entrenar</li>
+                        <li><strong>👁️ Visualizar:</strong> Ve todas las anotaciones en galería</li>
+                        <li><strong>🗑️ Eliminar:</strong> Borra sesión completa (irreversible)</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <div class="two-column">
@@ -372,6 +700,9 @@ async def main():
                         <div class="control-group">
                             <label for="imageFile">Imagen:</label>
                             <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
+                            <small style="color: #666; font-size: 12px;">
+                                Soporta: JPG, PNG, WebP, GIF, BMP (se redimensiona automáticamente)
+                            </small>
                         </div>
                         
                         <div class="control-group">
@@ -793,9 +1124,17 @@ ${result.yolo_format.join('\\n')}
                     <div class="session-stats">
                         📷 ${session.images_count} imágenes | 📝 ${session.labels_count} etiquetas
                     </div>
-                    <button class="download-btn" onclick="downloadSession('${session.name}'); event.stopPropagation();">
-                        💾 Descargar
-                    </button>
+                    <div class="session-actions">
+                        <button class="download-btn" onclick="downloadSession('${session.name}'); event.stopPropagation();" title="Descargar sesión">
+                            💾 Descargar
+                        </button>
+                        <button class="visualize-btn" onclick="visualizeSession('${session.name}'); event.stopPropagation();" title="Visualizar sesión">
+                            👁️ Visualizar
+                        </button>
+                        <button class="delete-btn" onclick="deleteSession('${session.name}'); event.stopPropagation();" title="Eliminar sesión">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -838,10 +1177,93 @@ ${result.yolo_format.join('\\n')}
             }
         }
         
+        function visualizeSession(sessionName) {
+            // Guardar sesión actual en localStorage
+            localStorage.setItem('currentSession', sessionName);
+            
+            // Abrir visualizador en nueva pestaña/ventana
+            window.open(`/visualizer?session=${sessionName}`, '_top');
+        }
+        
+        async function deleteSession(sessionName) {
+            // Confirmar eliminación
+            const confirmation = confirm(`⚠️ ¿Estás seguro de que quieres eliminar la sesión "${sessionName}"?
+
+🗑️ Esta acción eliminará permanentemente:
+• Todas las imágenes de la sesión
+• Todas las etiquetas/anotaciones 
+• No se puede deshacer
+
+¿Continuar con la eliminación?`);
+            
+            if (!confirmation) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/delete_session/${sessionName}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Sesión "${sessionName}" eliminada correctamente`);
+                    refreshSessions(); // Actualizar lista
+                    
+                    // Si era la sesión seleccionada, limpiar selección
+                    const currentSelected = document.getElementById('sessionName').value;
+                    if (currentSelected === sessionName) {
+                        document.getElementById('sessionName').value = 'default';
+                    }
+                } else {
+                    alert(`❌ Error al eliminar sesión: ${result.message}`);
+                }
+            } catch (error) {
+                alert('❌ Error de conexión al eliminar sesión: ' + error.message);
+            }
+        }
+        
         // Cargar sesiones al inicializar
         document.addEventListener('DOMContentLoaded', function() {
             refreshSessions();
+            initializeModal();
         });
+        
+        // Inicializar modal de instrucciones
+        function initializeModal() {
+            const modal = document.getElementById('instructionsModal');
+            const helpBtn = document.getElementById('helpBtn');
+            const closeBtn = document.querySelector('.close');
+            
+            // Abrir modal
+            helpBtn.addEventListener('click', function() {
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+            });
+            
+            // Cerrar modal con X
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Cerrar modal clickeando fuera
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Cerrar con tecla ESC
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
         
         // Agregar event listener al botón de refresh
         document.getElementById('refreshSessions')?.addEventListener('click', refreshSessions);
@@ -893,7 +1315,7 @@ async def list_sessions():
                     labels_path = os.path.join(session_path, "labels")
                     
                     if os.path.exists(images_path):
-                        images_count = len([f for f in os.listdir(images_path) if f.endswith('.jpg')])
+                        images_count = len([f for f in os.listdir(images_path) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'))])
                     
                     if os.path.exists(labels_path):
                         labels_count = len([f for f in os.listdir(labels_path) if f.endswith('.txt')])
@@ -938,7 +1360,7 @@ async def download_session(session_name: str):
             # Agregar todas las imágenes en la carpeta images/
             if os.path.exists(images_path):
                 for file in os.listdir(images_path):
-                    if file.endswith(('.jpg', '.jpeg', '.png')):
+                    if file.endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp')):
                         file_path = os.path.join(images_path, file)
                         zipf.write(file_path, f"images/{file}")  # Mantener carpeta images/
             
@@ -958,6 +1380,288 @@ async def download_session(session_name: str):
         
     except Exception as e:
         return {"success": False, "message": f"Error: {str(e)}"}
+
+@app.delete("/delete_session/{session_name}")
+async def delete_session(session_name: str):
+    """Eliminar sesión completa con todas sus imágenes y etiquetas"""
+    try:
+        session_path = f"annotations/{session_name}"
+        
+        if not os.path.exists(session_path):
+            return {"success": False, "message": f"Sesión '{session_name}' no encontrada"}
+        
+        # Verificar que no sea la sesión por defecto para evitar problemas
+        if session_name == "default":
+            return {"success": False, "message": "No se puede eliminar la sesión por defecto"}
+        
+        # Eliminar toda la carpeta de la sesión
+        shutil.rmtree(session_path)
+        
+        return {
+            "success": True, 
+            "message": f"Sesión '{session_name}' eliminada correctamente"
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error al eliminar sesión: {str(e)}"}
+
+@app.get("/visualizer", response_class=HTMLResponse)
+async def visualizer_page():
+    """Página del visualizador integrado"""
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎯 Dataset Visualizer</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .nav-buttons {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .nav-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .nav-btn:hover {
+            background: #0056b3;
+        }
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        .image-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .image-preview {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .image-info {
+            font-size: 14px;
+            color: #333;
+        }
+        .annotations-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .annotation-item {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 4px solid;
+            background: #f8f9fa;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .legend-item {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Dataset Visualizer</h1>
+            <p>Visualizar las anotaciones YOLO de la sesión actual</p>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/" class="nav-btn">← Volver al Anotador</a>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-title">🎨 Leyenda de Clases:</div>
+            <div class="legend-items" id="legendItems"></div>
+        </div>
+        
+        <h2 id="sessionTitle">📷 Selecciona una sesión en el anotador principal</h2>
+        <div class="images-grid" id="imagesGrid">
+            <div class="loading">Usa el anotador principal para seleccionar una sesión a visualizar</div>
+        </div>
+    </div>
+
+    <script>
+        // Obtener parámetro de sesión de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionName = urlParams.get('session') || localStorage.getItem('currentSession');
+
+        function createLegend() {
+            const classes = {
+                0: {"name": "objeto 1", "color": "#ff0000"},
+                1: {"name": "objeto 2", "color": "#00ff00"},
+                2: {"name": "objeto 3", "color": "#0000ff"},
+                3: {"name": "objeto 4", "color": "#ffff00"},
+                4: {"name": "objeto 5", "color": "#ff00ff"},
+                5: {"name": "objeto 6", "color": "#00ffff"}
+            };
+            
+            const legendItems = document.getElementById('legendItems');
+            legendItems.innerHTML = Object.entries(classes).map(([id, cls]) => `
+                <div class="legend-item" style="background-color: ${cls.color}">
+                    ${id}: ${cls.name}
+                </div>
+            `).join('');
+        }
+
+        async function loadSessionImages(sessionName) {
+            if (!sessionName) return;
+            
+            document.getElementById('sessionTitle').textContent = `📷 Imágenes de: ${sessionName}`;
+            
+            try {
+                const response = await fetch(`/api/session/${sessionName}/visualize`);
+                const data = await response.json();
+                
+                const grid = document.getElementById('imagesGrid');
+                
+                if (data.images.length === 0) {
+                    grid.innerHTML = '<div class="loading">No hay imágenes en esta sesión</div>';
+                    return;
+                }
+                
+                grid.innerHTML = data.images.map(img => `
+                    <div class="image-card">
+                        <img src="${img.image_data}" alt="${img.filename}" class="image-preview">
+                        <div class="image-info">
+                            <strong>📄 ${img.filename}</strong><br>
+                            ${img.has_labels ? '✅' : '❌'} ${img.annotations.length} anotaciones
+                            ${img.annotations.length > 0 && img.annotations[0].original_size ? 
+                                `<br>📏 Tamaño original: ${img.annotations[0].original_size[0]}×${img.annotations[0].original_size[1]}px` : ''}
+                            ${img.annotations.length > 0 && img.annotations[0].display_scale && img.annotations[0].display_scale < 1 ? 
+                                `<br>🔍 Escala: ${Math.round(img.annotations[0].display_scale * 100)}%` : ''}
+                        </div>
+                        ${img.annotations.length > 0 ? `
+                            <div class="annotations-list">
+                                ${img.annotations.map(ann => `
+                                    <div class="annotation-item" style="border-left-color: ${ann.color}">
+                                        ${ann.class_name} (ID: ${ann.class_id})
+                                        <br>YOLO: [${ann.yolo_coords.map(c => c.toFixed(3)).join(', ')}]
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                document.getElementById('imagesGrid').innerHTML = 
+                    '<div class="loading">Error cargando imágenes: ' + error.message + '</div>';
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            createLegend();
+            if (sessionName) {
+                loadSessionImages(sessionName);
+            }
+        });
+    </script>
+</body>
+</html>
+"""
+
+@app.get("/api/session/{session_name}/visualize")
+async def api_visualize_session(session_name: str):
+    """API para visualizar una sesión específica"""
+    try:
+        session_path = f"annotations/{session_name}"
+        if not os.path.exists(session_path):
+            return {"error": "Sesión no encontrada", "images": []}
+
+        images_path = f"{session_path}/images"
+        labels_path = f"{session_path}/labels"
+        
+        if not os.path.exists(images_path):
+            return {"session_name": session_name, "images": []}
+
+        visualized_images = []
+        
+        # Obtener todas las imágenes
+        for img_file in os.listdir(images_path):
+            if img_file.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp')):
+                img_path = os.path.join(images_path, img_file)
+                
+                # Buscar archivo de etiquetas correspondiente
+                label_file = os.path.splitext(img_file)[0] + '.txt'
+                label_file_path = os.path.join(labels_path, label_file)
+                
+                # Dibujar anotaciones sobre la imagen
+                image_with_annotations, annotations = draw_yolo_annotations(img_path, label_file_path)
+                
+                if image_with_annotations:
+                    # Convertir a base64
+                    image_data = image_to_base64(image_with_annotations)
+                    
+                    visualized_images.append({
+                        "filename": img_file,
+                        "image_data": image_data,
+                        "has_labels": os.path.exists(label_file_path),
+                        "annotations": annotations
+                    })
+        
+        return {"session_name": session_name, "images": visualized_images}
+        
+    except Exception as e:
+        return {"error": f"Error: {str(e)}", "images": []}
 
 @app.get("/cleanup_temp")
 async def cleanup_temp():
