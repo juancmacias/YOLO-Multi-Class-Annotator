@@ -18,7 +18,7 @@ local_config.py
 
 # Incluir archivos estáticos específicamente
 !static/
-!static/*loads/
+!static/*
 eggs/
 .eggs/
 lib/
