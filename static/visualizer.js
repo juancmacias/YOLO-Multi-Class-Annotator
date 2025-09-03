@@ -89,13 +89,24 @@ function updateSessionInfo(data) {
     // Actualizar estadísticas si existen elementos
     const statsElement = document.getElementById('session-stats');
     if (statsElement) {
-        const imageCount = data.images ? data.images.length : 0;
-        const annotationCount = data.images ? data.images.reduce((sum, img) => sum + (img.annotations ? img.annotations.length : 0), 0) : 0;
+        // Usar las estadísticas completas del endpoint
+        const totalImages = data.total_images || 0;
+        const displayedImages = data.returned_images || (data.images ? data.images.length : 0);
+        const totalAnnotations = data.total_labels || 0;
         
         statsElement.innerHTML = `
-            <div>Imágenes: <strong>${imageCount}</strong></div>
-            <div>Anotaciones: <strong>${annotationCount}</strong></div>
+            <div>Total de imágenes: <strong>${totalImages}</strong></div>
+            <div>Imágenes mostradas: <strong>${displayedImages}</strong></div>
+            <div>Total de anotaciones: <strong>${totalAnnotations}</strong></div>
         `;
+        
+        // Mostrar mensaje si hay más imágenes
+        if (displayedImages < totalImages) {
+            const warningMessage = document.createElement('div');
+            warningMessage.style.cssText = 'color: #ff6b35; font-size: 0.9em; margin-top: 10px; font-style: italic;';
+            warningMessage.innerHTML = `⚠️ Mostrando solo las primeras ${displayedImages} de ${totalImages} imágenes`;
+            statsElement.appendChild(warningMessage);
+        }
     }
 }
 

@@ -3,13 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <title>YOLO Multi-Class Annotator</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css?v=2024-augment">
 </head>
 <body>
     <div class="container">
         <h1 class="title">🎯 YOLO Multi-Class Annotator
             <button id="helpBtn" class="help-btn" title="Ver instrucciones">❓</button>
         </h1>
+        
+        <!-- ⭐ PANEL DE HERRAMIENTAS AVANZADAS ⭐ -->
+        <div id="advanced-tools" style="
+            text-align: center; 
+            margin: 20px auto; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            border-radius: 15px; 
+            border: 3px solid #4834d4;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 800px;
+        ">
+            <h2 style="
+                margin: 0 0 20px 0; 
+                color: white; 
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                font-size: 24px;
+            ">🚀 HERRAMIENTAS AVANZADAS</h2>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="/sessions" target="_blank" style="
+                    background: linear-gradient(45deg, #28a745, #20c997); 
+                    color: white; 
+                    text-decoration: none; 
+                    padding: 15px 20px; 
+                    border-radius: 10px; 
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+                    border: 2px solid #ffffff50;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    📂 GESTIONAR SESIONES
+                </a>
+                
+                <a href="/real-sessions" target="_blank" style="
+                    background: linear-gradient(45deg, #ffc107, #fd7e14); 
+                    color: #333; 
+                    text-decoration: none; 
+                    padding: 15px 20px; 
+                    border-radius: 10px; 
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6);
+                    border: 3px solid #ff8c00;
+                    font-size: 16px;
+                    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+                    animation: pulse-glow 2s infinite;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='translateY(-2px) scale(1.05)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+                    🔄 AUGMENTAR DATASET ⭐
+                </a>
+                
+                <a href="/visualizer" target="_blank" style="
+                    background: linear-gradient(45deg, #17a2b8, #138496); 
+                    color: white; 
+                    text-decoration: none; 
+                    padding: 15px 20px; 
+                    border-radius: 10px; 
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+                    border: 2px solid #ffffff50;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                    👁️ VISUALIZADOR
+                </a>
+            </div>
+            
+            <p style="
+                color: white; 
+                margin: 15px 0 0 0; 
+                font-size: 14px; 
+                opacity: 0.9;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            ">
+                💡 Usa estas herramientas para gestionar tus datasets y aplicar augmentaciones
+            </p>
+        </div>
+
+        <style>
+            @keyframes pulse-glow {
+                0%, 100% { 
+                    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6), 0 0 20px rgba(255, 140, 0, 0.3); 
+                }
+                50% { 
+                    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 140, 0, 0.5); 
+                }
+            }
+        </style>
         
         <!-- Modal de Instrucciones -->
         <div id="instructionsModal" class="modal">
@@ -46,7 +133,17 @@
                     <ul>
                         <li><strong>💾 Descargar:</strong> Obtén un ZIP con formato YOLO listo para entrenar</li>
                         <li><strong>👁️ Visualizar:</strong> Ve todas las anotaciones en galería</li>
-                        <li><strong>🗑️ Eliminar:</strong> Borra sesión completa (irreversible)</li>
+                        <li><strong>� Augmentar:</strong> Multiplica tu dataset con variantes de imágenes</li>
+                        <li><strong>�🗑️ Eliminar:</strong> Borra sesión completa (irreversible)</li>
+                    </ul>
+                    <h3>🎨 Augmentación de Dataset:</h3>
+                    <ul>
+                        <li><strong>Negativo:</strong> Invierte colores de las imágenes</li>
+                        <li><strong>Brillo:</strong> Aumenta luminosidad 50%</li>
+                        <li><strong>Espejo:</strong> Volteo horizontal (ajusta etiquetas YOLO automáticamente)</li>
+                        <li><strong>Rotación:</strong> Gira imágenes 15 grados</li>
+                        <li><strong>Desenfoque:</strong> Aplica filtro gaussiano suave</li>
+                        <li><strong>Contraste:</strong> Aumenta contraste 30%</li>
                     </ul>
                 </div>
             </div>
@@ -60,13 +157,13 @@
                     <div class="controls">
                         <div class="control-group">
                             <label for="sessionName">Sesión:</label>
-                            <input type="text" id="sessionName" name="sessionName" placeholder="Nombre de sesión" value="default">
+                            <input type="text" id="sessionName" name="session_name" placeholder="Nombre de sesión" value="default">
                             <button type="button" id="refreshSessions">🔄</button>
                         </div>
                         
                         <div class="control-group">
                             <label for="imageFile">Imagen:</label>
-                            <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
+                            <input type="file" id="imageFile" name="image" accept="image/*" required>
                             <small style="color: #666; font-size: 12px;">
                                 Soporta: JPG, PNG, WebP, GIF, BMP (se redimensiona automáticamente)
                             </small>
@@ -82,19 +179,19 @@
                         
                         <div class="control-group">
                             <label for="xPos">Pos X:</label>
-                            <input type="range" id="xPos" name="xPos" min="0" max="640" value="0">
+                            <input type="range" id="xPos" name="x" min="0" max="640" value="0">
                             <span id="xValue">0</span>
                         </div>
                         
                         <div class="control-group">
                             <label for="yPos">Pos Y:</label>
-                            <input type="range" id="yPos" name="yPos" min="0" max="640" value="0">
+                            <input type="range" id="yPos" name="y" min="0" max="640" value="0">
                             <span id="yValue">0</span>
                         </div>
                         
                         <div class="control-group">
                             <label>
-                                <input type="checkbox" id="randomBg" name="randomBg" checked> Fondo aleatorio
+                                <input type="checkbox" id="randomBg" name="random_bg" checked> Fondo aleatorio
                             </label>
                         </div>
                         

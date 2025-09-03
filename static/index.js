@@ -21,7 +21,7 @@ const classes = {
 
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    initializeModal();
+    // initializeModal(); // Modal de ayuda no implementado aún
     initializeClassButtons();
     refreshSessions();
     
@@ -349,7 +349,7 @@ ${result.yolo_format.join('\\n')}
 // ===== GESTIÓN DE SESIONES =====
 async function refreshSessions() {
     try {
-        const response = await fetch('/list_sessions');
+        const response = await fetch('/api/sessions');
         const result = await response.json();
         
         if (result.success) {
