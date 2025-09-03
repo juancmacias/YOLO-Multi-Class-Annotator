@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizador de Anotaciones YOLO</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 id="session-title">🎯 Dataset Visualizer</h1>
+            <div id="session-stats" style="color: #666; margin-top: 10px;"></div>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">← Volver al Anotador</a>
+            <button id="reload-btn" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">🔄 Recargar</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-title">🎨 Leyenda de Clases:</div>
+            <div class="legend-items" id="legend-items"></div>
+        </div>
+        
+        <div id="loading" style="display: none; text-align: center; padding: 40px;">
+            <div>Cargando datos de la sesión...</div>
+        </div>
+        
+        <div id="content">
+            <div class="images-grid" id="images-container">
+                <div class="loading">Usa el anotador principal para seleccionar una sesión a visualizar</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/visualizer.js"></script>
+</body>
+</html>

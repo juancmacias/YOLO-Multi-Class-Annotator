@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from PIL import Image, ImageDraw
@@ -12,12 +13,25 @@ import json
 import zipfile
 from datetime import datetime
 import shutil
+import hashlib
 
+# Crear aplicación FastAPI
 app = FastAPI(title="YOLO Multi-Class Annotator & Visualizer")
 
-# Crear carpeta para archivos estáticos si no existe
+# Configurar templates y archivos estáticos
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Crear carpetas necesarias
 os.makedirs("static", exist_ok=True)
+os.makedirs("templates", exist_ok=True)
 os.makedirs("annotations", exist_ok=True)
+
+
+@app.get("/sessions", response_class=HTMLResponse)
+async def sessions_page(request: Request):
+    """Página de gestión de sesiones"""
+    return templates.TemplateResponse("sessions.html", {"request": request})
 
 # Función para crear estructura de sesión
 def create_session_structure(session_name):
@@ -337,29 +351,8 @@ async def main():
             border-radius: 5px;
             font-size: 14px;
         }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .save-btn {
-            background: #28a745;
-        }
-        .save-btn:hover {
-            background: #218838;
-        }
-        .clear-btn {
-            background: #dc3545;
-        }
-        .clear-btn:hover {
-            background: #c82333;
-        }
-        #imageCanvas {
+    async def main(request: Request):
+        return templates.TemplateResponse("index.html", {"request": request})
             border: 2px solid #333;
             cursor: crosshair;
             max-width: 100%;
@@ -1406,218 +1399,10 @@ async def delete_session(session_name: str):
         return {"success": False, "message": f"Error al eliminar sesión: {str(e)}"}
 
 @app.get("/visualizer", response_class=HTMLResponse)
-async def visualizer_page():
+async def visualizer_page(request: Request):
     """Página del visualizador integrado"""
-    return """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>🎯 Dataset Visualizer</title>
-    <meta charset="utf-8">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .nav-buttons {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .nav-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 0 10px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .nav-btn:hover {
-            background: #0056b3;
-        }
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-        }
-        .image-card {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .image-preview {
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        .image-info {
-            font-size: 14px;
-            color: #333;
-        }
-        .annotations-list {
-            margin-top: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        .annotation-item {
-            padding: 5px;
-            margin: 2px 0;
-            border-left: 4px solid;
-            background: #f8f9fa;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        .legend {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .legend-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .legend-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .legend-item {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            color: white;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Dataset Visualizer</h1>
-            <p>Visualizar las anotaciones YOLO de la sesión actual</p>
-        </div>
+    return templates.TemplateResponse("visualizer.html", {"request": request})
 
-        <div class="nav-buttons">
-            <a href="/" class="nav-btn">← Volver al Anotador</a>
-        </div>
-        
-        <div class="legend">
-            <div class="legend-title">🎨 Leyenda de Clases:</div>
-            <div class="legend-items" id="legendItems"></div>
-        </div>
-        
-        <h2 id="sessionTitle">📷 Selecciona una sesión en el anotador principal</h2>
-        <div class="images-grid" id="imagesGrid">
-            <div class="loading">Usa el anotador principal para seleccionar una sesión a visualizar</div>
-        </div>
-    </div>
-
-    <script>
-        // Obtener parámetro de sesión de la URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionName = urlParams.get('session') || localStorage.getItem('currentSession');
-
-        function createLegend() {
-            const classes = {
-                0: {"name": "objeto 1", "color": "#ff0000"},
-                1: {"name": "objeto 2", "color": "#00ff00"},
-                2: {"name": "objeto 3", "color": "#0000ff"},
-                3: {"name": "objeto 4", "color": "#ffff00"},
-                4: {"name": "objeto 5", "color": "#ff00ff"},
-                5: {"name": "objeto 6", "color": "#00ffff"}
-            };
-            
-            const legendItems = document.getElementById('legendItems');
-            legendItems.innerHTML = Object.entries(classes).map(([id, cls]) => `
-                <div class="legend-item" style="background-color: ${cls.color}">
-                    ${id}: ${cls.name}
-                </div>
-            `).join('');
-        }
-
-        async function loadSessionImages(sessionName) {
-            if (!sessionName) return;
-            
-            document.getElementById('sessionTitle').textContent = `📷 Imágenes de: ${sessionName}`;
-            
-            try {
-                const response = await fetch(`/api/session/${sessionName}/visualize`);
-                const data = await response.json();
-                
-                const grid = document.getElementById('imagesGrid');
-                
-                if (data.images.length === 0) {
-                    grid.innerHTML = '<div class="loading">No hay imágenes en esta sesión</div>';
-                    return;
-                }
-                
-                grid.innerHTML = data.images.map(img => `
-                    <div class="image-card">
-                        <img src="${img.image_data}" alt="${img.filename}" class="image-preview">
-                        <div class="image-info">
-                            <strong>📄 ${img.filename}</strong><br>
-                            ${img.has_labels ? '✅' : '❌'} ${img.annotations.length} anotaciones
-                            ${img.annotations.length > 0 && img.annotations[0].original_size ? 
-                                `<br>📏 Tamaño original: ${img.annotations[0].original_size[0]}×${img.annotations[0].original_size[1]}px` : ''}
-                            ${img.annotations.length > 0 && img.annotations[0].display_scale && img.annotations[0].display_scale < 1 ? 
-                                `<br>🔍 Escala: ${Math.round(img.annotations[0].display_scale * 100)}%` : ''}
-                        </div>
-                        ${img.annotations.length > 0 ? `
-                            <div class="annotations-list">
-                                ${img.annotations.map(ann => `
-                                    <div class="annotation-item" style="border-left-color: ${ann.color}">
-                                        ${ann.class_name} (ID: ${ann.class_id})
-                                        <br>YOLO: [${ann.yolo_coords.map(c => c.toFixed(3)).join(', ')}]
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('');
-                
-            } catch (error) {
-                document.getElementById('imagesGrid').innerHTML = 
-                    '<div class="loading">Error cargando imágenes: ' + error.message + '</div>';
-            }
-        }
-
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            createLegend();
-            if (sessionName) {
-                loadSessionImages(sessionName);
-            }
-        });
-    </script>
-</body>
-</html>
-"""
 
 @app.get("/api/session/{session_name}/visualize")
 async def api_visualize_session(session_name: str):
@@ -1676,6 +1461,35 @@ async def cleanup_temp():
         return {"success": True, "message": "Archivos temporales limpiados"}
     except Exception as e:
         return {"success": False, "message": f"Error: {str(e)}"}
+
+@app.get("/debug/session/{session_name}")
+async def debug_session(session_name: str):
+    """Debug endpoint para verificar estructura de sesión"""
+    try:
+        session_path = f"annotations/{session_name}"
+        images_path = f"{session_path}/images"
+        labels_path = f"{session_path}/labels"
+        
+        debug_info = {
+            "session_name": session_name,
+            "session_path_exists": os.path.exists(session_path),
+            "images_path_exists": os.path.exists(images_path),
+            "labels_path_exists": os.path.exists(labels_path),
+            "images": [],
+            "labels": [],
+            "classes": CLASSES
+        }
+        
+        if os.path.exists(images_path):
+            debug_info["images"] = [f for f in os.listdir(images_path) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'))]
+        
+        if os.path.exists(labels_path):
+            debug_info["labels"] = [f for f in os.listdir(labels_path) if f.endswith('.txt')]
+        
+        return debug_info
+        
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     print("🚀 Iniciando YOLO Image Annotator")

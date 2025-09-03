@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>YOLO Multi-Class Annotator</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎯 YOLO Multi-Class Annotator
+            <button id="helpBtn" class="help-btn" title="Ver instrucciones">❓</button>
+        </h1>
+        
+        <!-- Modal de Instrucciones -->
+        <div id="instructionsModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>📚 Instrucciones de Uso</h2>
+                <div class="instructions-content">
+                    <h3>🚀 Pasos para anotar:</h3>
+                    <ol>
+                        <li><strong>📤 Sube tu imagen</strong> - Formatos soportados: JPG, PNG, WebP, GIF, BMP</li>
+                        <li><strong>⚙️ Configura parámetros</strong> - Tamaño del canvas, posición, fondo</li>
+                        <li><strong>🖼️ Genera el canvas</strong> - Click en "Generar" para crear el lienzo</li>
+                        <li><strong>🎯 Selecciona una clase</strong> - Elige el tipo de objeto a anotar</li>
+                        <li><strong>🖱️ Arrastra para anotar</strong> - Crea bounding boxes sobre los objetos</li>
+                        <li><strong>🔄 Repite para múltiples objetos</strong> - Anota todos los objetos de la imagen</li>
+                        <li><strong>💾 Guarda las anotaciones</strong> - Formato YOLO estándar para entrenamiento</li>
+                    </ol>
+                    <h3>🎨 Clases disponibles:</h3>
+                    <div class="classes-preview">
+                        <div class="class-item"><span style="background: #ff0000;"></span> Objeto 1</div>
+                        <div class="class-item"><span style="background: #00ff00;"></span> Objeto 2</div>
+                        <div class="class-item"><span style="background: #0000ff;"></span> Objeto 3</div>
+                        <div class="class-item"><span style="background: #ffff00;"></span> Objeto 4</div>
+                        <div class="class-item"><span style="background: #ff00ff;"></span> Objeto 5</div>
+                        <div class="class-item"><span style="background: #00ffff;"></span> Objeto 6</div>
+                    </div>
+                    <h3>⚡ Atajos de teclado:</h3>
+                    <ul>
+                        <li><kbd>1-6</kbd> - Seleccionar clase rápida</li>
+                        <li><kbd>Escape</kbd> - Cancelar anotación actual</li>
+                        <li><kbd>Delete</kbd> - Eliminar anotación seleccionada</li>
+                    </ul>
+                    <h3>📁 Gestión de sesiones:</h3>
+                    <ul>
+                        <li><strong>💾 Descargar:</strong> Obtén un ZIP con formato YOLO listo para entrenar</li>
+                        <li><strong>👁️ Visualizar:</strong> Ve todas las anotaciones en galería</li>
+                        <li><strong>🗑️ Eliminar:</strong> Borra sesión completa (irreversible)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel principal -->
+        <div class="two-column">
+            <div class="main-panel">
+                <!-- Formulario de carga de imagen -->
+                <form id="imageForm" enctype="multipart/form-data">
+                    <div class="controls">
+                        <div class="control-group">
+                            <label for="sessionName">Sesión:</label>
+                            <input type="text" id="sessionName" name="sessionName" placeholder="Nombre de sesión" value="default">
+                            <button type="button" id="refreshSessions">🔄</button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="imageFile">Imagen:</label>
+                            <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
+                            <small style="color: #666; font-size: 12px;">
+                                Soporta: JPG, PNG, WebP, GIF, BMP (se redimensiona automáticamente)
+                            </small>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="size">Tamaño:</label>
+                            <select id="size" name="size">
+                                <option value="320">320x320</option>
+                                <option value="640">640x640</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="xPos">Pos X:</label>
+                            <input type="range" id="xPos" name="xPos" min="0" max="640" value="0">
+                            <span id="xValue">0</span>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="yPos">Pos Y:</label>
+                            <input type="range" id="yPos" name="yPos" min="0" max="640" value="0">
+                            <span id="yValue">0</span>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="randomBg" name="randomBg" checked> Fondo aleatorio
+                            </label>
+                        </div>
+                        
+                        <button type="submit">🖼️ Generar</button>
+                    </div>
+                </form>
+
+                <!-- Canvas de imagen -->
+                <canvas id="imageCanvas" style="display: none; border: 1px solid #ddd; margin-top: 20px; cursor: crosshair;"></canvas>
+                
+                <!-- Controles de anotación -->
+                <div id="annotationControls" style="display: none; margin-top: 20px;">
+                    <h3>🎯 Seleccionar Clase:</h3>
+                    <div id="classButtons" class="class-buttons"></div>
+                    
+                    <h3>📝 Anotaciones:</h3>
+                    <div id="annotationsList" class="annotations-list">
+                        <p>Sin anotaciones aún</p>
+                    </div>
+                    
+                    <div class="annotation-actions">
+                        <input type="text" id="filename" placeholder="Nombre del archivo" style="margin-right: 10px; padding: 8px;">
+                        <button onclick="saveAnnotations()" class="save-btn">💾 Guardar</button>
+                        <button onclick="clearAnnotations()" class="clear-btn">🗑️ Limpiar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de sesiones -->
+            <div class="sessions-panel">
+                <h3>📂 Sesiones</h3>
+                <div id="sessionsList"></div>
+                <button onclick="refreshSessions()" class="save-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/app.js"></script>
+    <script src="/static/index.js"></script>
+</body>
+</html>
