@@ -132,7 +132,7 @@ dmypy.json
 
 # Anotaciones y datasets generados
 annotations/
-static/
+
 
 # Modelos entrenados
 models/
