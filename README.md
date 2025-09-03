@@ -1,5 +1,6 @@
 # 🎯 YOLO Multi-Class Annotator
 
+
 Una aplicación web moderna construida con **FastAPI** y **HTML/JavaScript** para crear datasets de entrenamiento para modelos YOLO de manera rápida e intuitiva.
 
 ## ✨ Características
