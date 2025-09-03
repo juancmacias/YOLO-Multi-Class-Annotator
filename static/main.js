@@ -431,7 +431,7 @@ async function downloadSession(sessionName) {
 
 function visualizeSession(sessionName) {
     localStorage.setItem('currentSession', sessionName);
-    window.open(`/visualizer?session=${sessionName}`, '_blank');
+    window.open(`/visualizer?session=${sessionName}`, '_top');
 }
 
 async function deleteSession(sessionName) {
