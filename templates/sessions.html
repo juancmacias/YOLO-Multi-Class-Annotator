@@ -3,89 +3,916 @@
 <head>
     <meta charset="UTF-8">
     <title>Gestión de Sesiones YOLO</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body class="sessions-page">
-    <div class="container">
-        <div class="header">
-            <a href="/" class="back-btn">← Volver al inicio</a>
-            <h1>� Gestión de Sesiones</h1>
-            <p>Administra tus proyectos de anotación</p>
-        </div>
-        
-        <div id="sessionsList" class="sessions-panel">
-            {% if sessions %}
-                <div class="sessions-grid">
-                    {% for session in sessions %}
-                    <div class="session-card">
-                        <h3>📁 {{ session.name }}</h3>
-                        <div class="session-stats">
-                            <span>🖼️ {{ session.images }} imágenes</span>
-                            <span>🏷️ {{ session.labels }} labels</span>
-                        </div>
-                        <div class="session-actions">
-                            <a href="/visualizer?session={{ session.name }}" class="btn-visualize">👁️ Visualizar</a>
-                            <button onclick="openAugmentationModal('{{ session.name }}')" class="augment-btn">🔄 Augmentar</button>
-                            <button onclick="deleteSession('{{ session.name }}')" class="btn-delete">🗑️ Eliminar</button>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="no-sessions">
-                    <h3>📂 No hay sesiones</h3>
-                    <p>Para crear una sesión, sube imágenes a:</p>
-                    <code>annotations/nombre_sesion/images/</code>
-                    <br><br>
-                    <button onclick="createExampleSession()" class="btn-create">➕ Crear Sesión de Ejemplo</button>
-                </div>
-            {% endif %}
-        </div>
-        
-        <button onclick="refreshSessions()" class="save-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
-    </div>
-
-    <!-- Modal para Augmentación -->
-    <div id="augmentationModal" class="augmentation-modal">
-        <div class="augmentation-content">
-            <h2 id="modalTitle">🔄 Augmentar Dataset</h2>
-            <div id="sessionInfo" style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;"></div>
-            
-            <h3>Selecciona las variantes a aplicar:</h3>
-            <div id="variantGrid" class="variant-grid">
-                <!-- Variantes se cargan dinámicamente -->
-            </div>
-            
-            <div class="progress-container" id="progressContainer">
-                <h4>Progreso de Augmentación:</h4>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">0% - Preparando...</div>
-            </div>
-            
-            <div class="modal-buttons">
-                <button class="btn-secondary" onclick="closeAugmentationModal()">Cancelar</button>
-                <button class="btn-primary" id="selectAllBtn" onclick="selectAllVariants()">Seleccionar Todo</button>
-                <button class="btn-success" id="startAugmentationBtn" onclick="startAugmentation()">Iniciar Augmentación</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="/static/sessions.js?v=2024"></script>
-    <script>
-        // Funciones adicionales específicas para esta página
-        function createExampleSession() {
-            alert('💡 Para crear una sesión:\\n\\n' +
-                  '1. Crea la carpeta: annotations/mi_sesion/\\n' +
-                  '2. Crea subcarpeta: annotations/mi_sesion/images/\\n' +
-                  '3. Sube tus imágenes JPG/PNG\\n' +
-                  '4. Recarga esta página');
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        // Recargar página al hacer clic en actualizar
-        function refreshSessions() {
-            window.location.reload();
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .admin-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-header p {
+            color: #666;
+        }
+        
+        .sessions-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .sessions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .session-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .session-card h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .session-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .no-sessions {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .no-sessions h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .no-sessions code {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 3px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .create-session-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .create-session-form input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .create-session-form button {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .sessions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .session-actions {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/dashboard" class="back-btn">← Dashboard</a>
+                <h1>📂 Gestión de Sesiones</h1>
+            </div>
+            <div class="user-info">
+                {% if current_user %}
+                <div class="user-badge">
+                    👤 {{ current_user.username }}
+                    {% if current_user and current_user.is_admin %}
+                    <span class="admin-badge">ADMIN</span>
+                    {% endif %}
+                </div>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+                {% else %}
+                <div class="user-badge">
+                    👤 Verificando autenticación...
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Administra tus Proyectos de Anotación</h1>
+            <p>Gestiona sesiones, descarga datasets y augmenta tus datos</p>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <div class="sessions-panel">
+            <div class="sessions-header">
+                <h2>Tus Sesiones</h2>
+                <div class="create-session-form">
+                    <input type="text" id="newSessionName" placeholder="Nombre de nueva sesión..." maxlength="50">
+                    <button onclick="createNewSession()" class="btn btn-primary">+ Crear Sesión</button>
+                </div>
+            </div>
+            
+            <div id="sessions-container">
+                <div class="no-sessions">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📂</div>
+                    <h3>Cargando sesiones...</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="loadSessions()" class="btn btn-secondary">🔄 Actualizar Lista</button>
+        </div>
+    </div>
+
+    <!-- Modal para augmentación -->
+    <div id="augmentModal" class="modal">
+        <div class="modal-content">
+            <h3>🔄 Configurar Augmentación</h3>
+            <p>Sesión: <strong><span id="augmentSessionName"></span></strong></p>
+            
+            <h4>Selecciona las variantes a aplicar:</h4>
+            <div id="variantsContainer" style="max-height: 300px; overflow-y: auto; margin: 1rem 0;">
+                <!-- Las variantes se cargarán dinámicamente -->
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button onclick="closeAugmentModal()" class="btn btn-secondary">Cancelar</button>
+                <button onclick="executeAugmentation()" class="btn btn-primary" id="executeAugmentBtn">🚀 Ejecutar Augmentación</button>
+            </div>
+            
+            <!-- Contenedor de progreso -->
+            <div id="progressContainer" style="display: none; margin-top: 2rem;">
+                <h4>📊 Progreso de Augmentación</h4>
+                <div style="background: #f8f9fa; border-radius: 10px; padding: 1rem; margin: 1rem 0;">
+                    <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
+                        <div id="progressBar" style="background: linear-gradient(90deg, #28a745, #20c997); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <div id="progressText" style="text-align: center; margin-top: 0.5rem; font-weight: bold; color: #333;">
+                        Iniciando...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmación de eliminación -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>⚠️ Confirmar Eliminación</h3>
+            <p>¿Estás seguro de que quieres eliminar la sesión "<span id="deleteSessionName"></span>"?</p>
+            <p style="color: #dc3545; margin: 1rem 0;"><strong>Esta acción no se puede deshacer.</strong></p>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button onclick="closeDeleteModal()" class="btn btn-secondary">Cancelar</button>
+                <button onclick="confirmDeleteSession()" class="btn btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let sessionToDelete = null;
+        let currentAugmentSession = null;
+        let augmentationInProgress = false;
+        let progressInterval = null;
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                window.location.href = '/login';
+                return {};
+            }
+            
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar sesiones');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    displaySessions(data.sessions);
+                } else {
+                    throw new Error(data.message || 'Error al cargar sesiones');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(`Error al cargar sesiones: ${error.message}`, 'error');
+                document.getElementById('sessions-container').innerHTML = `
+                    <div class="no-sessions">
+                        <h3>❌ Error al cargar sesiones</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displaySessions(sessions) {
+            const container = document.getElementById('sessions-container');
+            
+            if (sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="no-sessions">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">📂</div>
+                        <h3>No tienes sesiones aún</h3>
+                        <p>Crea tu primera sesión usando el formulario de arriba</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const sessionsGrid = document.createElement('div');
+            sessionsGrid.className = 'sessions-grid';
+            
+            sessions.forEach(session => {
+                const sessionCard = document.createElement('div');
+                sessionCard.className = 'session-card';
+                sessionCard.innerHTML = `
+                    <h3>📁 ${session.name}</h3>
+                    <div class="session-stats">
+                        <span>🖼️ ${session.images_count} imágenes</span>
+                        <span>🏷️ ${session.labels_count} etiquetas</span>
+                    </div>
+                    <div class="session-actions">
+                        <a href="/visualizer?session=${encodeURIComponent(session.name)}" class="btn btn-secondary">👁️ Ver</a>
+                        <a href="/annotator?session=${encodeURIComponent(session.name)}" class="btn btn-primary">🏷️ Anotar</a>
+                        <button onclick="augmentSession('${session.name}')" class="btn btn-success">🔄 Augmentar</button>
+                        <button onclick="downloadSession('${session.name}')" class="btn btn-secondary">📥 Descargar</button>
+                        <button onclick="deleteSession('${session.name}')" class="btn btn-danger">🗑️ Eliminar</button>
+                    </div>
+                `;
+                sessionsGrid.appendChild(sessionCard);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(sessionsGrid);
+        }
+        
+        async function createNewSession() {
+            const sessionName = document.getElementById('newSessionName').value.trim();
+            
+            if (!sessionName) {
+                showAlert('Por favor ingresa un nombre para la sesión', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/session/${encodeURIComponent(sessionName)}/create`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(`Sesión "${sessionName}" creada exitosamente`);
+                    document.getElementById('newSessionName').value = '';
+                    loadSessions();
+                } else {
+                    showAlert(data.message || 'Error al crear la sesión', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al crear la sesión', 'error');
+            }
+        }
+        
+        async function augmentSession(sessionName) {
+            currentAugmentSession = sessionName;
+            document.getElementById('augmentSessionName').textContent = sessionName;
+            
+            // Cargar variantes disponibles
+            await loadAvailableVariants();
+            
+            // Mostrar modal
+            document.getElementById('augmentModal').style.display = 'block';
+        }
+        
+        async function downloadSession(sessionName) {
+            try {
+                const response = await fetch(`/api/download/${encodeURIComponent(sessionName)}`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al descargar sesión');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${sessionName}_dataset.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showAlert(`Descarga de "${sessionName}" iniciada`);
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error al descargar la sesión', 'error');
+            }
+        }
+        
+        async function loadAvailableVariants() {
+            const variantsContainer = document.getElementById('variantsContainer');
+            
+            // Variantes disponibles (definidas estáticamente como en el servidor)
+            const variants = {
+                'negativo': {
+                    'name': 'Negativo',
+                    'description': 'Invierte los colores de la imagen',
+                    'icon': '🎭'
+                },
+                'brillo': {
+                    'name': 'Brillo aumentado',
+                    'description': 'Aumenta el brillo de la imagen en 50%',
+                    'icon': '☀️'
+                },
+                'espejo': {
+                    'name': 'Espejo horizontal',
+                    'description': 'Crea una imagen espejo (volteo horizontal)',
+                    'icon': '🪞'
+                },
+                'rotacion': {
+                    'name': 'Rotación ligera',
+                    'description': 'Rota la imagen 15 grados',
+                    'icon': '🔄'
+                },
+                'desenfoque': {
+                    'name': 'Desenfoque gaussiano',
+                    'description': 'Aplica desenfoque gaussiano suave',
+                    'icon': '🌀'
+                },
+                'contraste': {
+                    'name': 'Contraste aumentado',
+                    'description': 'Aumenta el contraste de la imagen',
+                    'icon': '🌈'
+                }
+            };
+            
+            let variantsHTML = '';
+            for (const [key, variant] of Object.entries(variants)) {
+                variantsHTML += `
+                    <label style="display: block; background: #f8f9fa; margin: 0.5rem 0; padding: 1rem; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;" 
+                           onmouseover="this.style.borderColor='#667eea'" 
+                           onmouseout="this.style.borderColor='transparent'">
+                        <input type="checkbox" name="variants" value="${key}" style="margin-right: 0.5rem; transform: scale(1.2);">
+                        <span style="font-weight: bold; color: #333;">${variant.icon} ${variant.name}</span>
+                        <br>
+                        <small style="color: #666; margin-left: 1.5rem;">${variant.description}</small>
+                    </label>
+                `;
+            }
+            
+            variantsContainer.innerHTML = variantsHTML;
+        }
+        
+        function closeAugmentModal() {
+            document.getElementById('augmentModal').style.display = 'none';
+            
+            // Solo resetear currentAugmentSession si no hay augmentación en progreso
+            const progressContainer = document.getElementById('progressContainer');
+            if (!progressContainer || progressContainer.style.display === 'none') {
+                currentAugmentSession = null;
+            }
+            
+            // Resetear formulario
+            const checkboxes = document.querySelectorAll('input[name="variants"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Ocultar progreso
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('executeAugmentBtn').disabled = false;
+            document.getElementById('executeAugmentBtn').textContent = '🚀 Ejecutar Augmentación';
+            
+            // Limpiar interval
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            
+            augmentationInProgress = false;
+        }
+        
+        async function executeAugmentation() {
+            if (augmentationInProgress) return;
+            
+            const selectedVariants = Array.from(document.querySelectorAll('input[name="variants"]:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedVariants.length === 0) {
+                showAlert('⚠️ Selecciona al menos una variante para continuar', 'error');
+                return;
+            }
+            
+            augmentationInProgress = true;
+            document.getElementById('executeAugmentBtn').disabled = true;
+            document.getElementById('executeAugmentBtn').textContent = '🔄 Procesando...';
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Iniciando augmentación...';
+            
+            try {
+                // Iniciar augmentación con variantes seleccionadas
+                const formData = new URLSearchParams();
+                formData.append('session', currentAugmentSession);
+                selectedVariants.forEach(variant => {
+                    formData.append('variants', variant);
+                });
+                
+                const response = await fetch('/api/augment', {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(`Augmentación iniciada para "${currentAugmentSession}" con ${selectedVariants.length} variantes`);
+                    monitorAugmentationProgress();
+                } else {
+                    throw new Error(data.message || 'Error al iniciar augmentación');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(`Error: ${error.message}`, 'error');
+                closeAugmentModal();
+            }
+        }
+        
+        async function monitorAugmentationProgress() {
+            // Verificar que aún tengamos una sesión válida
+            if (!currentAugmentSession) {
+                console.log('No hay sesión de augmentación activa, deteniendo monitoreo');
+                return;
+            }
+            
+            try {
+                console.log(`Monitoreando progreso para sesión: ${currentAugmentSession}`);
+                const response = await fetch(`/api/augment/progress/${currentAugmentSession}`, {
+                    headers: getAuthHeaders()
+                });
+                
+                const progress = await response.json();
+                console.log('Respuesta de progreso:', progress);
+                
+                if (progress.success) {
+                    if (progress.current !== undefined && progress.total !== undefined) {
+                        const percent = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+                        
+                        document.getElementById('progressBar').style.width = percent + '%';
+                        document.getElementById('progressText').textContent = 
+                            `Procesando: ${progress.current}/${progress.total} imágenes (${percent}%)`;
+                        
+                        if (progress.completed) {
+                            document.getElementById('progressText').textContent = 
+                                `✅ ¡Completado! ${progress.total} imágenes procesadas`;
+                            document.getElementById('executeAugmentBtn').textContent = '✅ Augmentación Completada';
+                            
+                            // Resetear el estado después de completar
+                            currentAugmentSession = null;
+                            
+                            setTimeout(() => {
+                                showAlert('🎉 ¡Augmentación completada con éxito! Recarga la lista de sesiones para ver los cambios.');
+                                closeAugmentModal();
+                                loadSessions(); // Recargar sesiones
+                            }, 2000);
+                            
+                            return; // No continuar monitoreando
+                        }
+                    } else {
+                        document.getElementById('progressText').textContent = 'Augmentación en progreso...';
+                    }
+                    
+                    // Continuar monitoreando cada 2 segundos solo si la sesión sigue siendo válida
+                    if (currentAugmentSession) {
+                        setTimeout(monitorAugmentationProgress, 2000);
+                    }
+                } else {
+                    console.log('No hay progreso activo o error:', progress.message);
+                    // Si no hay progreso activo, probablemente terminó
+                    document.getElementById('progressText').textContent = '✅ Proceso completado';
+                    document.getElementById('executeAugmentBtn').textContent = '✅ Completado';
+                    
+                    // Resetear el estado cuando no hay progreso activo
+                    currentAugmentSession = null;
+                    
+                    setTimeout(() => {
+                        closeAugmentModal();
+                        loadSessions();
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                console.error('Error monitoring progress:', error);
+                // Solo reintentar si aún hay una sesión activa
+                if (currentAugmentSession) {
+                    setTimeout(monitorAugmentationProgress, 3000);
+                }
+            }
+        }
+        
+        function deleteSession(sessionName) {
+            sessionToDelete = sessionName;
+            document.getElementById('deleteSessionName').textContent = sessionName;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            sessionToDelete = null;
+        }
+        
+        async function confirmDeleteSession() {
+            if (!sessionToDelete) return;
+            
+            try {
+                const response = await fetch(`/api/session/${encodeURIComponent(sessionToDelete)}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(`Sesión "${sessionToDelete}" eliminada exitosamente`);
+                    loadSessions();
+                } else {
+                    showAlert(data.message || 'Error al eliminar la sesión', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al eliminar la sesión', 'error');
+            } finally {
+                closeDeleteModal();
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('newSessionName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                createNewSession();
+            }
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deleteModal') {
+                closeDeleteModal();
+            }
+        });
+        
+        // Cerrar modal de augmentación al hacer clic fuera
+        document.getElementById('augmentModal').addEventListener('click', (e) => {
+            if (e.target.id === 'augmentModal') {
+                closeAugmentModal();
+            }
+        });
+        
+        // Verificar autenticación y cargar sesiones al cargar la página
+        // Función para actualizar información del usuario
+        function updateUserInfo(user) {
+            // Actualizar información del usuario en el header
+            const userBadge = document.querySelector('.user-badge');
+            if (userBadge) {
+                userBadge.innerHTML = `
+                    👤 ${user.username}
+                    ${(user && user.is_admin) ? '<span class="admin-badge">ADMIN</span>' : ''}
+                `;
+            }
+            
+            // Mostrar botón de logout si no existe
+            const userInfo = document.querySelector('.user-info');
+            if (userInfo && !userInfo.querySelector('.logout-btn')) {
+                const logoutBtn = document.createElement('button');
+                logoutBtn.className = 'logout-btn';
+                logoutBtn.textContent = 'Cerrar Sesión';
+                logoutBtn.onclick = logout;
+                userInfo.appendChild(logoutBtn);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verificar que el token sea válido y cargar info del usuario
+            fetch('/auth/profile', {
+                headers: getAuthHeaders()
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token inválido');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Actualizar información del usuario en la página
+                    updateUserInfo(data.user);
+                    loadSessions();
+                } else {
+                    throw new Error('Error de autenticación');
+                }
+            })
+            .catch(error => {
+                console.error('Error de autenticación:', error);
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('token_type');
+                window.location.href = '/login';
+            });
+        });
+        
+        // Función logout común
+        async function logout() {
+            try {
+                // Intentar logout en el servidor
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.log('Error en logout del servidor:', error);
+            }
+            
+            // Limpiar localStorage y redirigir
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
         }
     </script>
 </body>

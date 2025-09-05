@@ -139,6 +139,8 @@ dmypy.json
 
 # Anotaciones y datasets generados
 annotations/
+# Pero mantener estructura básica de ejemplo
+!annotations/.gitkeep
 
 
 # Modelos entrenados

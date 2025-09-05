@@ -2,234 +2,1325 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>YOLO Multi-Class Annotator</title>
-    <link rel="stylesheet" href="/static/styles.css?v=2024-augment">
+    <title>YOLO Annotator - Autenticado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .admin-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .main-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .control-group {
+            margin-bottom: 1rem;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #e6f3ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+        }
+        
+        .canvas-container {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .canvas-container canvas {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            max-width: 100%;
+            cursor: crosshair;
+        }
+        
+        .annotation-controls {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .class-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        
+        .class-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .class-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .annotations-list {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 100px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .annotation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .annotation-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Modal styles for class management */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .class-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .class-form input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 38px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .class-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .class-item-manager {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            background: white;
+        }
+
+        .class-color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+        }
+
+        .class-info {
+            flex: 1;
+        }
+
+        .class-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .preset-colors {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .preset-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .preset-color:hover {
+            transform: scale(1.1);
+            border-color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .class-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/dashboard" class="back-btn">← Dashboard</a>
+                <h1>🏷️ YOLO Annotator</h1>
+            </div>
+            <div class="user-info">
+                {% if user %}
+                <div class="user-badge">
+                    👤 {{ user.username }}
+                    {% if user and user.is_admin %}
+                    <span class="admin-badge">ADMIN</span>
+                    {% endif %}
+                </div>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+                {% else %}
+                <div class="user-badge">
+                    👤 Verificando autenticación...
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
     <div class="container">
-        <h1 class="title">🎯 YOLO Multi-Class Annotator
-            <button id="helpBtn" class="help-btn" title="Ver instrucciones">❓</button>
-        </h1>
+        <div id="alert-container"></div>
         
-        <!-- ⭐ PANEL DE HERRAMIENTAS AVANZADAS ⭐ -->
-        <div id="advanced-tools" style="
-            text-align: center; 
-            margin: 20px auto; 
-            padding: 20px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            border-radius: 15px; 
-            border: 3px solid #4834d4;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            max-width: 800px;
-        ">
-            <h2 style="
-                margin: 0 0 20px 0; 
-                color: white; 
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-                font-size: 24px;
-            ">🚀 HERRAMIENTAS AVANZADAS</h2>
-            
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="/sessions" target="_top" style="
-                    background: linear-gradient(45deg, #28a745, #20c997); 
-                    color: white; 
-                    text-decoration: none; 
-                    padding: 15px 20px; 
-                    border-radius: 10px; 
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-                    border: 2px solid #ffffff50;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    📂 GESTIONAR SESIONES
-                </a>
-                
-                <a href="/real-sessions" target="_top" style="
-                    background: linear-gradient(45deg, #ffc107, #fd7e14); 
-                    color: #333; 
-                    text-decoration: none; 
-                    padding: 15px 20px; 
-                    border-radius: 10px; 
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6);
-                    border: 3px solid #ff8c00;
-                    font-size: 16px;
-                    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
-                    animation: pulse-glow 2s infinite;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px) scale(1.05)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-                    🔄 AUGMENTAR DATASET ⭐
-                </a>
-                
-                <a href="/visualizer" target="_top" style="
-                    background: linear-gradient(45deg, #17a2b8, #138496); 
-                    color: white; 
-                    text-decoration: none; 
-                    padding: 15px 20px; 
-                    border-radius: 10px; 
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
-                    border: 2px solid #ffffff50;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    👁️ VISUALIZADOR
-                </a>
-            </div>
-            
-            <p style="
-                color: white; 
-                margin: 15px 0 0 0; 
-                font-size: 14px; 
-                opacity: 0.9;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            ">
-                💡 Usa estas herramientas para gestionar tus datasets y aplicar augmentaciones
-            </p>
+        <div class="alert alert-info">
+            📝 <strong>Instrucciones:</strong> Sube una imagen, configura parámetros, genera el canvas, selecciona una clase y arrastra para crear bounding boxes.
         </div>
-
-        <style>
-            @keyframes pulse-glow {
-                0%, 100% { 
-                    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6), 0 0 20px rgba(255, 140, 0, 0.3); 
-                }
-                50% { 
-                    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 140, 0, 0.5); 
-                }
-            }
-        </style>
         
-        <!-- Modal de Instrucciones -->
-        <div id="instructionsModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>📚 Instrucciones de Uso</h2>
-                <div class="instructions-content">
-                    <h3>🚀 Pasos para anotar:</h3>
-                    <ol>
-                        <li><strong>📤 Sube tu imagen</strong> - Formatos soportados: JPG, PNG, WebP, GIF, BMP</li>
-                        <li><strong>⚙️ Configura parámetros</strong> - Tamaño del canvas, posición, fondo</li>
-                        <li><strong>🖼️ Genera el canvas</strong> - Click en "Generar" para crear el lienzo</li>
-                        <li><strong>🎯 Selecciona una clase</strong> - Elige el tipo de objeto a anotar</li>
-                        <li><strong>🖱️ Arrastra para anotar</strong> - Crea bounding boxes sobre los objetos</li>
-                        <li><strong>🔄 Repite para múltiples objetos</strong> - Anota todos los objetos de la imagen</li>
-                        <li><strong>💾 Guarda las anotaciones</strong> - Formato YOLO estándar para entrenamiento</li>
-                    </ol>
-                    <h3>🎨 Clases disponibles:</h3>
-                    <div class="classes-preview">
-                        <div class="class-item"><span style="background: #ff0000;"></span> Objeto 1</div>
-                        <div class="class-item"><span style="background: #00ff00;"></span> Objeto 2</div>
-                        <div class="class-item"><span style="background: #0000ff;"></span> Objeto 3</div>
-                        <div class="class-item"><span style="background: #ffff00;"></span> Objeto 4</div>
-                        <div class="class-item"><span style="background: #ff00ff;"></span> Objeto 5</div>
-                        <div class="class-item"><span style="background: #00ffff;"></span> Objeto 6</div>
-                    </div>
-                    <h3>⚡ Atajos de teclado:</h3>
-                    <ul>
-                        <li><kbd>1-6</kbd> - Seleccionar clase rápida</li>
-                        <li><kbd>Escape</kbd> - Cancelar anotación actual</li>
-                        <li><kbd>Delete</kbd> - Eliminar anotación seleccionada</li>
-                    </ul>
-                    <h3>📁 Gestión de sesiones:</h3>
-                    <ul>
-                        <li><strong>💾 Descargar:</strong> Obtén un ZIP con formato YOLO listo para entrenar</li>
-                        <li><strong>👁️ Visualizar:</strong> Ve todas las anotaciones en galería</li>
-                        <li><strong>� Augmentar:</strong> Multiplica tu dataset con variantes de imágenes</li>
-                        <li><strong>�🗑️ Eliminar:</strong> Borra sesión completa (irreversible)</li>
-                    </ul>
-                    <h3>🎨 Augmentación de Dataset:</h3>
-                    <ul>
-                        <li><strong>Negativo:</strong> Invierte colores de las imágenes</li>
-                        <li><strong>Brillo:</strong> Aumenta luminosidad 50%</li>
-                        <li><strong>Espejo:</strong> Volteo horizontal (ajusta etiquetas YOLO automáticamente)</li>
-                        <li><strong>Rotación:</strong> Gira imágenes 15 grados</li>
-                        <li><strong>Desenfoque:</strong> Aplica filtro gaussiano suave</li>
-                        <li><strong>Contraste:</strong> Aumenta contraste 30%</li>
-                    </ul>
+        <div class="main-panel">
+            <h2>📤 Subir y Configurar Imagen</h2>
+            
+            <form id="uploadForm">
+                <div class="control-group">
+                    <label for="sessionSelect">Sesión:</label>
+                    <select id="sessionSelect" required>
+                        <option value="">Selecciona una sesión...</option>
+                    </select>
                 </div>
-            </div>
-        </div>
-
-        <!-- Panel principal -->
-        <div class="two-column">
-            <div class="main-panel">
-                <!-- Formulario de carga de imagen -->
-                <form id="imageForm" enctype="multipart/form-data">
-                    <div class="controls">
-                        <div class="control-group">
-                            <label for="sessionName">Sesión:</label>
-                            <input type="text" id="sessionName" name="session_name" placeholder="Nombre de sesión" value="default">
-                            <button type="button" id="refreshSessions">🔄</button>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="imageFile">Imagen:</label>
-                            <input type="file" id="imageFile" name="image" accept="image/*" required>
-                            <small style="color: #666; font-size: 12px;">
-                                Soporta: JPG, PNG, WebP, GIF, BMP (se redimensiona automáticamente)
-                            </small>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="size">Tamaño:</label>
-                            <select id="size" name="size">
-                                <option value="320">320x320</option>
-                                <option value="640">640x640</option>
-                            </select>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="xPos">Pos X:</label>
-                            <input type="range" id="xPos" name="x" min="0" max="640" value="0">
-                            <span id="xValue">0</span>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="yPos">Pos Y:</label>
-                            <input type="range" id="yPos" name="y" min="0" max="640" value="0">
-                            <span id="yValue">0</span>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>
-                                <input type="checkbox" id="randomBg" name="random_bg" checked> Fondo aleatorio
-                            </label>
-                        </div>
-                        
-                        <button type="submit">🖼️ Generar</button>
-                    </div>
-                </form>
-
-                <!-- Canvas de imagen -->
-                <canvas id="imageCanvas" style="display: none; border: 1px solid #ddd; margin-top: 20px; cursor: crosshair;"></canvas>
                 
-                <!-- Controles de anotación -->
-                <div id="annotationControls" style="display: none; margin-top: 20px;">
-                    <h3>🎯 Seleccionar Clase:</h3>
-                    <div id="classButtons" class="class-buttons"></div>
-                    
-                    <h3>📝 Anotaciones:</h3>
-                    <div id="annotationsList" class="annotations-list">
-                        <p>Sin anotaciones aún</p>
+                <div class="control-group">
+                    <label for="imageFile">Imagen:</label>
+                    <input type="file" id="imageFile" accept="image/*" required>
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        Formatos soportados: JPG, PNG, WebP, GIF, BMP
+                    </small>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="control-group">
+                        <label for="canvasWidth">Ancho Canvas:</label>
+                        <select id="canvasWidth">
+                            <option value="640">640px</option>
+                            <option value="320">320px</option>
+                            <option value="800">800px</option>
+                        </select>
                     </div>
                     
-                    <div class="annotation-actions">
-                        <input type="text" id="filename" placeholder="Nombre del archivo" style="margin-right: 10px; padding: 8px;">
-                        <button onclick="saveAnnotations()" class="save-btn">💾 Guardar</button>
-                        <button onclick="clearAnnotations()" class="clear-btn">🗑️ Limpiar</button>
+                    <div class="control-group">
+                        <label for="canvasHeight">Alto Canvas:</label>
+                        <select id="canvasHeight">
+                            <option value="640">640px</option>
+                            <option value="320">320px</option>
+                            <option value="800">800px</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="imagePosX">Posición X:</label>
+                        <input type="number" id="imagePosX" value="0" min="0">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="imagePosY">Posición Y:</label>
+                        <input type="number" id="imagePosY" value="0" min="0">
                     </div>
                 </div>
+                
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="changeBg" checked> Fondo aleatorio
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn">🖼️ Generar Canvas</button>
+            </form>
+        </div>
+        
+        <!-- Canvas de imagen -->
+        <div class="canvas-container" id="canvasContainer" style="display: none;">
+            <canvas id="imageCanvas"></canvas>
+        </div>
+        
+        <!-- Controles de anotación -->
+        <div class="annotation-controls" id="annotationControls" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>🎯 Seleccionar Clase para Anotar</h3>
+                <button onclick="openClassManager()" class="btn" style="background: #28a745;">⚙️ Gestionar Clases</button>
             </div>
-
-            <!-- Panel de sesiones -->
-            <div class="sessions-panel">
-                <h3>📂 Sesiones</h3>
-                <div id="sessionsList"></div>
-                <button onclick="refreshSessions()" class="save-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
+            <div class="class-buttons" id="classButtons">
+                <!-- Se generan dinámicamente -->
+            </div>
+            
+            <h3>📝 Anotaciones Actuales</h3>
+            <div class="annotations-list" id="annotationsList">
+                <p style="text-align: center; color: #666;">Sin anotaciones aún. Selecciona una clase y arrastra en la imagen.</p>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="filename" placeholder="Nombre del archivo (opcional)" style="flex: 1; min-width: 200px;">
+                <button onclick="saveAnnotations()" class="btn btn-success">💾 Guardar Anotaciones</button>
+                <button onclick="clearAnnotations()" class="btn btn-danger">🗑️ Limpiar Todo</button>
             </div>
         </div>
     </div>
-    
-    <script src="/static/application.js"></script>
-    <script src="/static/main.js"></script>
+
+    <!-- Modal de gestión de clases -->
+    <div id="classManagerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Gestión de Clases</h2>
+                <span class="close" onclick="closeClassManager()">&times;</span>
+            </div>
+            
+            <!-- Formulario para crear/editar clase -->
+            <div class="class-form">
+                <input type="text" id="className" placeholder="Nombre de la clase" maxlength="50">
+                <input type="color" id="classColor" class="color-picker" value="#ff0000">
+                <button onclick="saveClass()" class="btn btn-success">Guardar</button>
+                <button onclick="cancelEdit()" class="btn" id="cancelEditBtn" style="display: none;">Cancelar</button>
+            </div>
+
+            <!-- Colores predefinidos -->
+            <div style="margin-bottom: 15px;">
+                <h4>🎨 Colores predefinidos:</h4>
+                <div class="preset-colors" id="presetColors">
+                    <!-- Se cargan dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Lista de clases existentes -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4>📋 Clases existentes:</h4>
+                    <button onclick="resetToDefaultClasses()" class="btn" style="background: #6c757d;">🔄 Restablecer por defecto</button>
+                </div>
+                <div class="class-list" id="classList">
+                    <!-- Se cargan dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Acciones adicionales -->
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <button onclick="importClassesFromAnnotations()" class="btn" style="background: #17a2b8;">📥 Importar desde anotaciones</button>
+                <button onclick="closeClassManager()" class="btn btn-danger">❌ Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let currentCanvas = null;
+        let currentContext = null;
+        let currentImage = null;
+        let currentSession = null;
+        let currentFilename = null;
+        let annotations = [];
+        let isDrawing = false;
+        let startX, startY;
+        let selectedClass = 0;
+        let editingClassId = null;
+        
+        // Clases YOLO con colores (se cargan dinámicamente)
+        let classes = [
+            { id: 0, name: 'Clase 0', color: '#ff0000' },
+            { id: 1, name: 'Clase 1', color: '#00ff00' },
+            { id: 2, name: 'Clase 2', color: '#0000ff' },
+            { id: 3, name: 'Clase 3', color: '#ffff00' },
+            { id: 4, name: 'Clase 4', color: '#ff00ff' },
+            { id: 5, name: 'Clase 5', color: '#00ffff' }
+        ];
+
+        // Cargar clases al inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserClasses();
+            loadPresetColors();
+        });
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('token_type') || 'bearer';
+            
+            if (!token) {
+                window.location.href = '/login';
+                return {};
+            }
+            
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('token_type') || 'bearer';
+            
+            if (!token) {
+                window.location.href = '/login';
+                return {};
+            }
+            
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions', {
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const sessionSelect = document.getElementById('sessionSelect');
+                    sessionSelect.innerHTML = '<option value="">Selecciona una sesión...</option>';
+                    
+                    data.sessions.forEach(session => {
+                        const option = document.createElement('option');
+                        option.value = session.name;
+                        option.textContent = `${session.name} (${session.images_count} imgs, ${session.labels_count} labels)`;
+                        sessionSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showAlert('Error al cargar sesiones', 'error');
+            }
+        }
+        
+        // Crear botones de clases
+        function createClassButtons() {
+            const container = document.getElementById('classButtons');
+            container.innerHTML = '';
+            
+            classes.forEach(cls => {
+                const button = document.createElement('button');
+                button.className = 'class-btn';
+                button.style.backgroundColor = cls.color;
+                button.style.color = 'white';
+                button.style.borderColor = cls.color;
+                button.textContent = cls.name;
+                button.onclick = () => selectClass(cls.id);
+                
+                if (cls.id === selectedClass) {
+                    button.classList.add('active');
+                }
+                
+                container.appendChild(button);
+            });
+        }
+        
+        function selectClass(classId) {
+            selectedClass = classId;
+            createClassButtons(); // Actualizar botones
+        }
+        
+        // Manejo del formulario
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const sessionName = document.getElementById('sessionSelect').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            const canvasWidth = parseInt(document.getElementById('canvasWidth').value);
+            const canvasHeight = parseInt(document.getElementById('canvasHeight').value);
+            const x = parseInt(document.getElementById('imagePosX').value);
+            const y = parseInt(document.getElementById('imagePosY').value);
+            const changeBg = document.getElementById('changeBg').checked;
+            
+            if (!sessionName || !imageFile) {
+                showAlert('Por favor selecciona una sesión y una imagen', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('session', sessionName);
+            formData.append('file', imageFile);
+            formData.append('canvas_width', canvasWidth);
+            formData.append('canvas_height', canvasHeight);
+            formData.append('x', x);
+            formData.append('y', y);
+            formData.append('change_bg', changeBg);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Imagen cargada exitosamente', 'success');
+                    currentSession = sessionName;
+                    currentFilename = data.filename;
+                    document.getElementById('filename').value = data.filename;
+                    
+                    // Cargar imagen en canvas
+                    loadImageToCanvas(data.preview, canvasWidth, canvasHeight);
+                    
+                    // Mostrar controles
+                    document.getElementById('canvasContainer').style.display = 'block';
+                    document.getElementById('annotationControls').style.display = 'block';
+                    
+                    // Crear botones de clases
+                    createClassButtons();
+                    
+                } else {
+                    showAlert(data.message || 'Error al cargar imagen', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión', 'error');
+            }
+        });
+        
+        function loadImageToCanvas(imageSrc, width, height) {
+            const canvas = document.getElementById('imageCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0);
+                
+                currentCanvas = canvas;
+                currentContext = ctx;
+                currentImage = img;
+                
+                // Configurar eventos del canvas
+                setupCanvasEvents();
+            };
+            img.src = imageSrc;
+        }
+        
+        function setupCanvasEvents() {
+            currentCanvas.addEventListener('mousedown', startDrawing);
+            currentCanvas.addEventListener('mousemove', draw);
+            currentCanvas.addEventListener('mouseup', stopDrawing);
+        }
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = currentCanvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = currentCanvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            // Redibujar imagen y anotaciones existentes
+            redrawCanvas();
+            
+            // Dibujar rectángulo actual
+            currentContext.strokeStyle = classes[selectedClass].color;
+            currentContext.lineWidth = 2;
+            currentContext.strokeRect(startX, startY, currentX - startX, currentY - startY);
+        }
+        
+        function stopDrawing(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            const rect = currentCanvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            
+            // Calcular coordenadas YOLO normalizadas
+            const x1 = Math.min(startX, endX);
+            const y1 = Math.min(startY, endY);
+            const x2 = Math.max(startX, endX);
+            const y2 = Math.max(startY, endY);
+            
+            const width = x2 - x1;
+            const height = y2 - y1;
+            
+            // Solo agregar si el rectángulo tiene tamaño
+            if (width > 5 && height > 5) {
+                const canvasWidth = currentCanvas.width;
+                const canvasHeight = currentCanvas.height;
+                
+                const annotation = {
+                    class_id: selectedClass,
+                    x_center: (x1 + width/2) / canvasWidth,
+                    y_center: (y1 + height/2) / canvasHeight,
+                    width: width / canvasWidth,
+                    height: height / canvasHeight,
+                    x1: x1,
+                    y1: y1,
+                    x2: x2,
+                    y2: y2
+                };
+                
+                annotations.push(annotation);
+                updateAnnotationsList();
+                redrawCanvas();
+            }
+        }
+        
+        function redrawCanvas() {
+            if (!currentImage) return;
+            
+            currentContext.clearRect(0, 0, currentCanvas.width, currentCanvas.height);
+            currentContext.drawImage(currentImage, 0, 0);
+            
+            // Dibujar todas las anotaciones
+            annotations.forEach(ann => {
+                currentContext.strokeStyle = classes[ann.class_id].color;
+                currentContext.lineWidth = 2;
+                currentContext.strokeRect(ann.x1, ann.y1, ann.x2 - ann.x1, ann.y2 - ann.y1);
+                
+                // Etiqueta de clase
+                currentContext.fillStyle = classes[ann.class_id].color;
+                currentContext.fillRect(ann.x1, ann.y1 - 20, 60, 20);
+                currentContext.fillStyle = 'white';
+                currentContext.font = '12px Arial';
+                currentContext.fillText(classes[ann.class_id].name, ann.x1 + 5, ann.y1 - 5);
+            });
+        }
+        
+        function updateAnnotationsList() {
+            const container = document.getElementById('annotationsList');
+            
+            if (annotations.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">Sin anotaciones aún. Selecciona una clase y arrastra en la imagen.</p>';
+                return;
+            }
+            
+            container.innerHTML = annotations.map((ann, index) => `
+                <div class="annotation-item">
+                    <span style="color: ${classes[ann.class_id].color};">
+                        ${classes[ann.class_id].name} - x:${ann.x_center.toFixed(3)}, y:${ann.y_center.toFixed(3)}, w:${ann.width.toFixed(3)}, h:${ann.height.toFixed(3)}
+                    </span>
+                    <button onclick="removeAnnotation(${index})" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">✖</button>
+                </div>
+            `).join('');
+        }
+        
+        function removeAnnotation(index) {
+            annotations.splice(index, 1);
+            updateAnnotationsList();
+            redrawCanvas();
+        }
+        
+        function clearAnnotations() {
+            annotations = [];
+            updateAnnotationsList();
+            redrawCanvas();
+        }
+        
+        async function saveAnnotations() {
+            if (!currentSession || !currentFilename) {
+                showAlert('No hay imagen cargada para guardar', 'error');
+                return;
+            }
+            
+            if (annotations.length === 0) {
+                showAlert('No hay anotaciones para guardar', 'error');
+                return;
+            }
+            
+            const filename = document.getElementById('filename').value || currentFilename;
+            
+            const formData = new FormData();
+            formData.append('session', currentSession);
+            formData.append('filename', filename);
+            formData.append('annotations', JSON.stringify(annotations));
+            
+            try {
+                const response = await fetch('/api/save_annotations', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(`Anotaciones guardadas: ${data.annotations_count} anotaciones`, 'success');
+                } else {
+                    showAlert(data.message || 'Error al guardar anotaciones', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al guardar', 'error');
+            }
+        }
+        
+        // ========================================================
+        // GESTIÓN DE CLASES DINÁMICAS
+        // ========================================================
+
+        async function loadUserClasses(sessionName = null) {
+            try {
+                const params = sessionName ? `?session_name=${encodeURIComponent(sessionName)}` : '';
+                const response = await fetch(`/api/classes/${params}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const userClasses = await response.json();
+                    
+                    // Convertir a formato compatible con el código existente
+                    classes = userClasses.map((cls, index) => ({
+                        id: index,
+                        dbId: cls.id, // ID real de la base de datos
+                        name: cls.name,
+                        color: cls.color
+                    }));
+
+                    createClassButtons();
+                    updateClassList();
+                    
+                    console.log(`📋 Cargadas ${classes.length} clases`);
+                } else {
+                    console.error('Error cargando clases:', response.statusText);
+                    showAlert('Error cargando clases personalizadas', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión cargando clases', 'error');
+            }
+        }
+
+        async function loadPresetColors() {
+            try {
+                const response = await fetch('/api/classes/available-colors', {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const colors = await response.json();
+                    const container = document.getElementById('presetColors');
+                    
+                    container.innerHTML = colors.map(color => `
+                        <div class="preset-color" 
+                             style="background-color: ${color.value}" 
+                             title="${color.name}"
+                             onclick="selectPresetColor('${color.value}')">
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error cargando colores:', error);
+            }
+        }
+
+        function openClassManager() {
+            document.getElementById('classManagerModal').style.display = 'block';
+            updateClassList();
+        }
+
+        function closeClassManager() {
+            document.getElementById('classManagerModal').style.display = 'none';
+            cancelEdit();
+        }
+
+        function selectPresetColor(color) {
+            document.getElementById('classColor').value = color;
+        }
+
+        async function saveClass() {
+            const name = document.getElementById('className').value.trim();
+            const color = document.getElementById('classColor').value;
+
+            if (!name) {
+                showAlert('Por favor ingresa un nombre para la clase', 'error');
+                return;
+            }
+
+            try {
+                const sessionName = currentSession;
+                const method = editingClassId ? 'PUT' : 'POST';
+                const url = editingClassId 
+                    ? `/api/classes/${editingClassId}` 
+                    : '/api/classes/';
+
+                const body = editingClassId 
+                    ? { name, color }
+                    : { name, color, session_name: sessionName };
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert(
+                        editingClassId ? 'Clase actualizada correctamente' : 'Clase creada correctamente', 
+                        'success'
+                    );
+                    
+                    // Limpiar formulario
+                    document.getElementById('className').value = '';
+                    document.getElementById('classColor').value = '#ff0000';
+                    cancelEdit();
+                    
+                    // Recargar clases
+                    await loadUserClasses(currentSession);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.detail || 'Error al guardar la clase', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al guardar la clase', 'error');
+            }
+        }
+
+        function editClass(dbId, name, color) {
+            editingClassId = dbId;
+            document.getElementById('className').value = name;
+            document.getElementById('classColor').value = color;
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+            
+            // Scroll al formulario
+            document.getElementById('className').focus();
+        }
+
+        function cancelEdit() {
+            editingClassId = null;
+            document.getElementById('className').value = '';
+            document.getElementById('classColor').value = '#ff0000';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
+        async function deleteClass(dbId) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta clase?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/classes/${dbId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    showAlert('Clase eliminada correctamente', 'success');
+                    await loadUserClasses(currentSession);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.detail || 'Error al eliminar la clase', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al eliminar la clase', 'error');
+            }
+        }
+
+        async function resetToDefaultClasses() {
+            if (!confirm('¿Estás seguro? Esto eliminará todas las clases personalizadas y creará las clases por defecto.')) {
+                return;
+            }
+
+            try {
+                const sessionName = currentSession;
+                const response = await fetch('/api/classes/reset-to-default', {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ session_name: sessionName })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert(result.detail, 'success');
+                    await loadUserClasses(currentSession);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.detail || 'Error al restablecer clases', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al restablecer clases', 'error');
+            }
+        }
+
+        async function importClassesFromAnnotations() {
+            if (!currentSession) {
+                showAlert('Selecciona una sesión primero', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/classes/import', {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ session_name: currentSession })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert(result.detail, 'success');
+                    await loadUserClasses(currentSession);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.detail || 'Error al importar clases', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al importar clases', 'error');
+            }
+        }
+
+        function updateClassList() {
+            const container = document.getElementById('classList');
+            
+            if (classes.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No hay clases definidas</p>';
+                return;
+            }
+
+            container.innerHTML = classes.map(cls => `
+                <div class="class-item-manager">
+                    <div class="class-color-preview" style="background-color: ${cls.color}"></div>
+                    <div class="class-info">
+                        <strong>${cls.name}</strong><br>
+                        <small>ID: ${cls.id} | Color: ${cls.color}</small>
+                    </div>
+                    <div class="class-actions">
+                        <button class="btn-small btn-edit" onclick="editClass(${cls.dbId}, '${cls.name}', '${cls.color}')">✏️</button>
+                        <button class="btn-small btn-delete" onclick="deleteClass(${cls.dbId})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Actualizar createClassButtons para usar las clases dinámicas
+        function createClassButtons() {
+            const container = document.getElementById('classButtons');
+            if (!container || classes.length === 0) return;
+            
+            container.innerHTML = '';
+            
+            classes.forEach(cls => {
+                const button = document.createElement('button');
+                button.className = 'class-btn';
+                button.style.backgroundColor = cls.color;
+                button.style.color = getContrastColor(cls.color);
+                button.style.borderColor = cls.color;
+                button.textContent = cls.name;
+                button.onclick = () => selectClass(cls.id);
+                
+                if (cls.id === selectedClass) {
+                    button.classList.add('active');
+                }
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Función auxiliar para determinar color de texto contrastante
+        function getContrastColor(hexColor) {
+            // Convertir hex a RGB
+            const r = parseInt(hexColor.substr(1, 2), 16);
+            const g = parseInt(hexColor.substr(3, 2), 16);
+            const b = parseInt(hexColor.substr(5, 2), 16);
+            
+            // Calcular luminancia
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            
+            return luminance > 0.5 ? '#000000' : '#ffffff';
+        }
+
+        // Event listeners para cerrar modal
+        window.onclick = function(event) {
+            const modal = document.getElementById('classManagerModal');
+            if (event.target === modal) {
+                closeClassManager();
+            }
+        }
+
+        // ========================================================
+        // FIN GESTIÓN DE CLASES
+        // ========================================================
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            // Si el modal está abierto, manejar Escape
+            const modal = document.getElementById('classManagerModal');
+            if (modal && modal.style.display === 'block') {
+                if (e.key === 'Escape') {
+                    closeClassManager();
+                    return;
+                }
+                // No procesar otros atajos si el modal está abierto
+                return;
+            }
+            
+            if (e.key >= '1' && e.key <= '9') {
+                const classId = parseInt(e.key) - 1;
+                if (classId < classes.length) {
+                    selectClass(classId);
+                }
+            } else if (e.key === 'Escape') {
+                isDrawing = false;
+                redrawCanvas();
+            } else if (e.key === 'Delete') {
+                if (annotations.length > 0) {
+                    annotations.pop();
+                    updateAnnotationsList();
+                    redrawCanvas();
+                }
+            }
+        });
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verificar que el token sea válido y cargar info del usuario
+            fetch('/auth/profile', {
+                headers: getAuthHeaders()
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token inválido');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Actualizar información del usuario en la página
+                    updateUserInfo(data.user);
+                    // Cargar sesiones
+                    loadSessions();
+                } else {
+                    throw new Error('Error de autenticación');
+                }
+            })
+            .catch(error => {
+                console.error('Error de autenticación:', error);
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('token_type');
+                window.location.href = '/login';
+            });
+            
+            // Verificar si hay parámetro de sesión en URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionParam = urlParams.get('session');
+            if (sessionParam) {
+                setTimeout(() => {
+                    document.getElementById('sessionSelect').value = sessionParam;
+                }, 1000);
+            }
+        });
+        
+        // Función para actualizar información del usuario
+        function updateUserInfo(user) {
+            // Actualizar información del usuario en el header
+            const userBadge = document.querySelector('.user-badge');
+            if (userBadge) {
+                userBadge.innerHTML = `
+                    👤 ${user.username}
+                    ${(user && user.is_admin) ? '<span class="admin-badge">ADMIN</span>' : ''}
+                `;
+            }
+            
+            // Mostrar botón de logout si no existe
+            const userInfo = document.querySelector('.user-info');
+            if (userInfo && !userInfo.querySelector('.logout-btn')) {
+                const logoutBtn = document.createElement('button');
+                logoutBtn.className = 'logout-btn';
+                logoutBtn.textContent = 'Cerrar Sesión';
+                logoutBtn.onclick = logout;
+                userInfo.appendChild(logoutBtn);
+            }
+        }
+        
+        // Función logout común
+        async function logout() {
+            try {
+                // Intentar logout en el servidor
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.log('Error en logout del servidor:', error);
+            }
+            
+            // Limpiar localStorage y redirigir
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+    </script>
 </body>
 </html>

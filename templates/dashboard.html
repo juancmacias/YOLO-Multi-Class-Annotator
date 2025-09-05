@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - YOLO Annotator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .admin-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card p {
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: opacity 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .sessions-section {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sessions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .session-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        
+        .session-card:hover {
+            border-color: #667eea;
+        }
+        
+        .session-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .session-stats {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            text-decoration: none;
+            border-radius: 3px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 2rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .alert-info {
+            background-color: #e6f3ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-title {
+            color: #27ae60;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .modal-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .session-hash-container {
+            background: #f8f9fa;
+            border: 2px dashed #27ae60;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            color: #2c3e50;
+        }
+
+        .share-url-container {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .share-url-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            color: #2c3e50;
+            outline: none;
+        }
+
+        .copy-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .copy-btn:hover {
+            background: #219a52;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn.copied {
+            background: #2ecc71;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .modal-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .modal-btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        /* Estilos para sesiones privadas */
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .private-indicator {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .session-card {
+            border: 2px solid transparent;
+        }
+
+        .session-card.private-session {
+            border-color: #e74c3c;
+            background: linear-gradient(white, white) padding-box, 
+                       linear-gradient(135deg, #e74c3c, #c0392b) border-box;
+        }
+
+        .btn-share {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .btn-share:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400) !important;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>🎯 YOLO Annotator Dashboard</h1>
+            <div class="user-info">
+                {% if user %}
+                <div class="user-badge">
+                    👤 {{ user.username }}
+                    {% if user and user.is_admin %}
+                    <span class="admin-badge">ADMIN</span>
+                    {% endif %}
+                </div>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+                {% else %}
+                <div class="user-badge">
+                    👤 Verificando autenticación...
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="alert-container"></div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>📝 Anotador Clásico</h3>
+                <p>Crea y anota datasets para entrenamiento YOLO. Sube imágenes y define bounding boxes para tus clases.</p>
+                <a href="/annotator" class="btn">Abrir Anotador</a>
+            </div>
+            
+            <div class="card">
+                <h3>👁️ Visualizador</h3>
+                <p>Visualiza datasets existentes con sus anotaciones. Revisa y verifica la calidad de tus anotaciones.</p>
+                <a href="/visualizer" class="btn btn-secondary">Abrir Visualizador</a>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Gestión de Sesiones</h3>
+                <p>Administra todas tus sesiones de anotación. Crea, descarga y gestiona tus datasets.</p>
+                <a href="/sessions" class="btn btn-success">Gestionar Sesiones</a>
+            </div>
+        </div>
+        
+        <div class="sessions-section">
+            <div class="sessions-header">
+                <h3>🗂️ Tus Sesiones Recientes</h3>
+                <button class="btn" onclick="createNewSession()">+ Nueva Sesión</button>
+            </div>
+            
+            <div id="sessions-container">
+                <div class="empty-state">
+                    Cargando sesiones...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-hide después de 5 segundos
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('token_type') || 'bearer';
+            
+            if (!token) {
+                window.location.href = '/login';
+                return {};
+            }
+            
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        function updateUserInfo(user) {
+            // Actualizar información del usuario en el header
+            const userBadge = document.querySelector('.user-badge');
+            if (userBadge) {
+                userBadge.innerHTML = `
+                    👤 ${user.username}
+                    ${(user && user.is_admin) ? '<span class="admin-badge">ADMIN</span>' : ''}
+                `;
+            }
+            
+            // Mostrar botón de logout si no existe
+            const userInfo = document.querySelector('.user-info');
+            if (userInfo && !userInfo.querySelector('.logout-btn')) {
+                const logoutBtn = document.createElement('button');
+                logoutBtn.className = 'logout-btn';
+                logoutBtn.textContent = 'Cerrar Sesión';
+                logoutBtn.onclick = logout;
+                userInfo.appendChild(logoutBtn);
+            }
+        }
+        
+        async function logout() {
+            try {
+                // Intentar logout en el servidor
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.log('Error en logout del servidor:', error);
+            }
+            
+            // Limpiar tokens locales
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('token_type');
+            
+            // Redireccionar al login
+            window.location.href = '/login';
+        }
+        
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar sesiones');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    displaySessions(data.sessions);
+                } else {
+                    throw new Error(data.message || 'Error al cargar sesiones');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('sessions-container').innerHTML = `
+                    <div class="empty-state">
+                        Error al cargar sesiones: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function displaySessions(sessions) {
+            const container = document.getElementById('sessions-container');
+            
+            if (sessions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        No tienes sesiones aún. ¡Crea tu primera sesión!
+                    </div>
+                `;
+                return;
+            }
+            
+            const sessionsGrid = document.createElement('div');
+            sessionsGrid.className = 'sessions-grid';
+            
+            sessions.forEach(session => {
+                const sessionCard = document.createElement('div');
+                sessionCard.className = session.is_private ? 'session-card private-session' : 'session-card';
+                
+                // Indicador para sesiones privadas
+                const privateIndicator = session.is_private ? `
+                    <div class="private-indicator" title="Sesión Privada">
+                        🔒 Privada
+                    </div>
+                ` : '';
+                
+                // Botón para compartir sesiones privadas
+                const shareButton = session.is_private ? `
+                    <button class="btn btn-small btn-share" onclick="showShareModal('${session.session_hash}', '${session.share_url}')" title="Compartir sesión">
+                        🔗 Compartir
+                    </button>
+                ` : '';
+                
+                sessionCard.innerHTML = `
+                    <div class="session-header">
+                        <div class="session-name">${session.name}</div>
+                        ${privateIndicator}
+                    </div>
+                    <div class="session-stats">
+                        📷 ${session.images_count} imágenes<br>
+                        🏷️ ${session.labels_count} etiquetas
+                    </div>
+                    <div class="session-actions">
+                        <a href="/visualizer?session=${encodeURIComponent(session.name)}" class="btn btn-small btn-secondary">Ver</a>
+                        <a href="/annotator?session=${encodeURIComponent(session.name)}" class="btn btn-small">Anotar</a>
+                        ${shareButton}
+                    </div>
+                `;
+                sessionsGrid.appendChild(sessionCard);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(sessionsGrid);
+        }
+        
+        async function createNewSession() {
+            const sessionName = prompt('Nombre de la nueva sesión privada:');
+            
+            if (!sessionName || sessionName.trim() === '') {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/sessions/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({
+                        session_name: sessionName.trim()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert(`✅ Sesión privada "${sessionName}" creada exitosamente`, 'success');
+                    
+                    // Mostrar información del hash para compartir
+                    const shareUrl = `${window.location.origin}/session/${data.session_hash}`;
+                    showSessionCreatedModal(data.session_name, data.session_hash, shareUrl);
+                    
+                    loadSessions(); // Recargar lista de sesiones
+                } else {
+                    showAlert(data.detail || 'Error al crear la sesión', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error de conexión al crear la sesión', 'error');
+            }
+        }
+        
+        function showSessionCreatedModal(sessionName, sessionHash, shareUrl) {
+            // Actualizar contenido del modal
+            document.getElementById('sessionHashDisplay').textContent = sessionHash;
+            document.getElementById('shareUrlInput').value = shareUrl;
+            document.getElementById('modalAnnotatorLink').href = shareUrl;
+            
+            // Mostrar modal
+            document.getElementById('sessionCreatedModal').style.display = 'block';
+        }
+        
+        function closeSessionModal() {
+            document.getElementById('sessionCreatedModal').style.display = 'none';
+        }
+        
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('sessionCreatedModal');
+            if (event.target === modal) {
+                closeSessionModal();
+            }
+        }
+        
+        function showShareModal(sessionHash, shareUrl) {
+            // Reutilizar el modal existente para mostrar info de compartir
+            document.getElementById('sessionHashDisplay').textContent = sessionHash;
+            document.getElementById('shareUrlInput').value = shareUrl;
+            document.getElementById('modalAnnotatorLink').href = shareUrl;
+            
+            // Cambiar el título del modal
+            document.querySelector('.modal-title').textContent = '🔗 Compartir Sesión Privada';
+            document.querySelector('.modal-description').textContent = 'Comparte esta URL para dar acceso a tu sesión privada.';
+            
+            // Mostrar modal
+            document.getElementById('sessionCreatedModal').style.display = 'block';
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('📋 Copiado al portapapeles', 'success');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showAlert('📋 Copiado al portapapeles', 'success');
+            });
+        }
+        
+        // Verificar autenticación al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verificar que el token sea válido
+            fetch('/auth/profile', {
+                headers: getAuthHeaders()
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token inválido');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Actualizar información del usuario en la página
+                    updateUserInfo(data.user);
+                    loadSessions();
+                } else {
+                    throw new Error('Error de autenticación');
+                }
+            })
+            .catch(error => {
+                console.error('Error de autenticación:', error);
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('token_type');
+                window.location.href = '/login';
+            });
+        });
+    </script>
+
+    <!-- Modal para mostrar sesión creada -->
+    <div id="sessionCreatedModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeSessionModal()">&times;</button>
+            <h2 class="modal-title">🎉 ¡Sesión Privada Creada!</h2>
+            <p class="modal-description">Tu sesión ha sido creada exitosamente. Comparte el enlace para dar acceso:</p>
+            
+            <div style="margin: 1.5rem 0;">
+                <strong>Hash de la Sesión:</strong>
+                <div class="session-hash-container" id="sessionHashDisplay"></div>
+            </div>
+            
+            <div style="margin: 1.5rem 0;">
+                <strong>Enlace para compartir:</strong>
+                <div class="share-url-container">
+                    <input type="text" class="share-url-input" id="shareUrlInput" readonly>
+                    <button class="copy-btn" onclick="copyToClipboard('shareUrlInput', this)">
+                        📋 Copiar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <a href="#" id="modalAnnotatorLink" class="modal-btn modal-btn-primary">
+                    🎯 Ir al Anotador
+                </a>
+                <button class="modal-btn modal-btn-secondary" onclick="closeSessionModal()">
+                    ❌ Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Sesión Creada -->
+    <div id="sessionCreatedModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeSessionModal()">&times;</span>
+            <h2 class="modal-title">🎉 ¡Sesión Privada Creada!</h2>
+            <p class="modal-description">Tu sesión ha sido creada exitosamente. Comparte la URL con quienes quieras que accedan a esta sesión.</p>
+            
+            <div class="session-hash-container">
+                <strong>Hash de la sesión:</strong><br>
+                <code id="sessionHashDisplay"></code>
+            </div>
+            
+            <div class="share-url-container">
+                <input type="text" id="shareUrlInput" class="share-url-input" readonly>
+                <button class="copy-btn" onclick="copyToClipboard(document.getElementById('shareUrlInput').value)">
+                    📋 Copiar
+                </button>
+            </div>
+            
+            <div class="modal-actions">
+                <a id="modalAnnotatorLink" href="#" target="_blank" class="modal-btn modal-btn-primary">
+                    🎯 Abrir Anotador
+                </a>
+                <button class="modal-btn modal-btn-secondary" onclick="closeSessionModal()">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

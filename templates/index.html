@@ -3,53 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <title>YOLO Multi-Class Annotator</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .description {
+            margin-bottom: 2rem;
+        }
+        
+        .description p {
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .description strong {
+            color: #667eea;
+        }
+        
+        .auth-section {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-desc {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .version {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 2rem 1rem;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .auth-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
 </head>
-<body class="index-page">
+<body>
     <div class="main-container">
         <h1 class="title">🎯 YOLO Multi-Class Annotator</h1>
         
         <div class="description">
-            <p>Sistema completo para anotación y aumento de datos para modelos YOLO</p>
-            <p><strong>¡Nuevo!</strong> Sistema de augmentación de datasets con 6 variantes diferentes</p>
+            <p>Sistema completo de anotación y augmentación de datos para modelos YOLO</p>
+            <p><strong>Ahora con autenticación JWT y gestión de usuarios</strong></p>
         </div>
         
-        <div class="tools-grid">
-            <a href="/real-sessions" class="tool-card augmentation">
-                <span class="tool-icon">🔄</span>
-                <div class="tool-title">AUGMENTAR DATASET ⭐</div>
-                <div class="tool-desc">Aplica transformaciones automáticas a tus imágenes: negativo, brillo, espejo, rotación, desenfoque y contraste</div>
-            </a>
+        <div class="auth-section">
+            <h3 style="margin-bottom: 1rem; color: #333;">🔐 Acceso al Sistema</h3>
+            <p style="margin-bottom: 1.5rem; color: #666;">Inicia sesión o regístrate para acceder a todas las funcionalidades</p>
             
-            <a href="/sessions" class="tool-card sessions">
-                <span class="tool-icon">📂</span>
-                <div class="tool-title">GESTIONAR SESIONES</div>
-                <div class="tool-desc">Administra tus proyectos de anotación y organiza tus datasets</div>
-            </a>
+            <div class="auth-buttons">
+                <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
+                <a href="/register" class="btn btn-secondary">Crear Cuenta</a>
+            </div>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">Augmentación de Datos</div>
+                <div class="feature-desc">6 variantes automáticas: negativo, brillo, espejo, rotación, desenfoque y contraste</div>
+            </div>
             
-            <a href="/visualizer" class="tool-card visualizer">
-                <span class="tool-icon">👁️</span>
-                <div class="tool-title">VISUALIZADOR</div>
-                <div class="tool-desc">Explora y visualiza tus anotaciones de forma interactiva</div>
-            </a>
+            <div class="feature-card">
+                <div class="feature-icon">📂</div>
+                <div class="feature-title">Gestión de Sesiones</div>
+                <div class="feature-desc">Organiza tus proyectos por usuario con sesiones aisladas y seguras</div>
+            </div>
             
-            <a href="/annotator" class="tool-card annotator">
-                <span class="tool-icon">🏷️</span>
-                <div class="tool-title">ANOTADOR CLÁSICO</div>
-                <div class="tool-desc">Herramienta de anotación manual para crear datasets</div>
-            </a>
+            <div class="feature-card">
+                <div class="feature-icon">👁️</div>
+                <div class="feature-title">Visualizador Avanzado</div>
+                <div class="feature-desc">Explora y visualiza tus anotaciones de forma interactiva</div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🏷️</div>
+                <div class="feature-title">Anotador YOLO</div>
+                <div class="feature-desc">Herramienta completa para crear bounding boxes y etiquetas</div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <div class="feature-title">Multi-Usuario</div>
+                <div class="feature-desc">Sistema con roles de admin y usuario, datos aislados por usuario</div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-title">Seguridad JWT</div>
+                <div class="feature-desc">Autenticación segura con tokens JWT y gestión de sesiones</div>
+            </div>
         </div>
         
         <div class="footer">
-            <p>💡 <strong>Recomendado:</strong> Usa el augmentador para multiplicar tu dataset antes del entrenamiento</p>
-            <p>Versión 2.0 - Con sistema de augmentación integrado</p>
+            <p>💡 <strong>Características:</strong> Autenticación segura • Aislamiento de datos • Augmentación automática • Visualización avanzada</p>
+            <p class="version">Versión 2.0 JWT - Sistema de autenticación completo</p>
         </div>
     </div>
     
     <script>
-        function showAnnotator() {
-            alert('🚧 El anotador clásico estará disponible próximamente.\n\n💡 Mientras tanto, usa:\n• Augmentador: Para crear variantes de imágenes\n• Sesiones: Para gestionar proyectos\n• Visualizador: Para explorar datos');
-        }
+        // Verificar si ya está logueado
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            
+            if (token) {
+                // Verificar si el token es válido
+                fetch('/auth/profile', {
+                    headers: {
+                        'Authorization': `${localStorage.getItem('token_type') || 'bearer'} ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Usuario ya logueado, redireccionar al dashboard
+                        window.location.href = '/dashboard';
+                    }
+                })
+                .catch(() => {
+                    // Token inválido, limpiar
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('token_type');
+                });
+            }
+        });
     </script>
 </body>
 </html>

@@ -4,24 +4,344 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizador - YOLO Annotator</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .admin-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .controls label {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .controls select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 200px;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .image-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+        }
+        
+        .image-container canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #f8f9fa;
+        }
+        
+        .image-info {
+            padding: 1rem;
+        }
+        
+        .image-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+        
+        .image-stats {
+            display: flex;
+            gap: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-session {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            color: #666;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 3rem;
+            background: #f8d7da;
+            border-radius: 10px;
+            color: #721c24;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-info {
+            background: #e6f3ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body class="visualizer-page">
-    <div class="container">
-        <div class="header">
-            <h1>👁️ Visualizador de Datasets</h1>
-            <a href="/" class="back-btn">← Volver al inicio</a>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/dashboard" class="back-btn">← Dashboard</a>
+                <h1>👁️ Visualizador de Datasets</h1>
+            </div>
+            <div class="user-info">
+                {% if user %}
+                <div class="user-badge">
+                    👤 {{ user.username }}
+                    {% if user and user.is_admin %}
+                    <span class="admin-badge">ADMIN</span>
+                    {% endif %}
+                </div>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+                {% else %}
+                <div class="user-badge">
+                    👤 Verificando autenticación...
+                </div>
+                {% endif %}
+            </div>
         </div>
+    </header>
+
+    <div class="container">
+        <div id="alert-container"></div>
         
         <div class="controls">
             <label>📂 Seleccionar sesión:</label>
             <select id="sessionSelect" onchange="loadSession()">
                 <option value="">Selecciona una sesión...</option>
-                {% for session in sessions %}
-                <option value="{{ session }}" {% if session == current_session %}selected{% endif %}>{{ session }}</option>
-                {% endfor %}
             </select>
-            <button onclick="refreshData()">🔄 Actualizar</button>
+            <button onclick="refreshData()" class="btn">🔄 Actualizar</button>
         </div>
         
         <div id="statsContainer" style="display: none;">
@@ -50,18 +370,419 @@
             {% else %}
                 <div class="no-session">
                     <h3>📂 Selecciona una sesión para visualizar</h3>
-                    <p>Usa el selector de arriba para elegir qué dataset explorar</p>
+                    <p>Usa el selector de arriba para elegir un dataset</p>
                 </div>
             {% endif %}
         </div>
     </div>
-    
-    <script src="/static/visualizer.js"></script>
+
+    <!-- Modal para imagen ampliada -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalImageName"></h3>
+            <div style="text-align: center; margin: 1rem 0;">
+                <canvas id="modalCanvas" style="max-width: 100%; border: 1px solid #ddd;"></canvas>
+            </div>
+            <div id="modalImageInfo"></div>
+        </div>
+    </div>
+
     <script>
-        // Inicializar el visualizador con la sesión actual
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeVisualizer('{{ current_session or "" }}');
+        let currentUser = null;
+        let currentSessionData = null;
+        
+        // Clases YOLO con colores
+        const classes = [
+            { id: 0, name: 'Clase 0', color: '#ff0000' },
+            { id: 1, name: 'Clase 1', color: '#00ff00' },
+            { id: 2, name: 'Clase 2', color: '#0000ff' },
+            { id: 3, name: 'Clase 3', color: '#ffff00' },
+            { id: 4, name: 'Clase 4', color: '#ff00ff' },
+            { id: 5, name: 'Clase 5', color: '#00ffff' }
+        ];
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('token_type') || 'bearer';
+            
+            if (!token) {
+                window.location.href = '/login';
+                return {};
+            }
+            
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('token_type') || 'bearer';
+            
+            if (!token) {
+                window.location.href = '/login';
+                return {};
+            }
+            
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions', {
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    const sessionSelect = document.getElementById('sessionSelect');
+                    
+                    // Limpiar opciones actuales excepto la primera
+                    sessionSelect.innerHTML = '<option value="">Selecciona una sesión...</option>';
+                    
+                    data.sessions.forEach(session => {
+                        const option = document.createElement('option');
+                        option.value = session.name;
+                        option.textContent = `${session.name} (${session.images_count} imgs, ${session.labels_count} labels)`;
+                        sessionSelect.appendChild(option);
+                    });
+                    
+                    // Si hay sesión en URL, seleccionarla
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const sessionParam = urlParams.get('session');
+                    if (sessionParam) {
+                        sessionSelect.value = sessionParam;
+                        loadSession();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showAlert('Error al cargar sesiones', 'error');
+            }
+        }
+        
+        async function loadSession() {
+            const sessionName = document.getElementById('sessionSelect').value;
+            
+            if (!sessionName) {
+                document.getElementById('contentContainer').innerHTML = `
+                    <div class="no-session">
+                        <h3>📂 Selecciona una sesión para visualizar</h3>
+                        <p>Usa el selector de arriba para elegir un dataset</p>
+                    </div>
+                `;
+                document.getElementById('statsContainer').style.display = 'none';
+                return;
+            }
+            
+            // Mostrar loading
+            document.getElementById('contentContainer').innerHTML = `
+                <div class="loading">
+                    <h3>⏳ Cargando imágenes...</h3>
+                    <p>Procesando dataset de ${sessionName}</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`/api/session/${encodeURIComponent(sessionName)}/visualize`, {
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentSessionData = data;
+                    displaySessionData(data);
+                } else {
+                    throw new Error(data.message || 'Error al cargar sesión');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(`Error al cargar sesión: ${error.message}`, 'error');
+                document.getElementById('contentContainer').innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error al cargar la sesión</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displaySessionData(data) {
+            // Actualizar estadísticas
+            document.getElementById('totalImages').textContent = data.total_images;
+            document.getElementById('totalLabels').textContent = data.total_labels;
+            document.getElementById('avgLabels').textContent = 
+                data.total_images > 0 ? (data.total_labels / data.total_images).toFixed(1) : '0';
+            document.getElementById('statsContainer').style.display = 'block';
+            
+            // Mostrar galería de imágenes
+            if (data.images.length === 0) {
+                document.getElementById('contentContainer').innerHTML = `
+                    <div class="no-session">
+                        <h3>📷 No hay imágenes en esta sesión</h3>
+                        <p>Sube imágenes usando el anotador</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const gallery = document.createElement('div');
+            gallery.className = 'gallery';
+            
+            data.images.forEach((imageData, index) => {
+                const imageCard = document.createElement('div');
+                imageCard.className = 'image-card';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 300;
+                canvas.height = 250;
+                canvas.style.cursor = 'pointer';
+                canvas.onclick = () => openImageModal(imageData, index);
+                
+                // Cargar y dibujar imagen con anotaciones
+                loadImageWithAnnotations(canvas, imageData);
+                
+                imageCard.innerHTML = `
+                    <div class="image-container"></div>
+                    <div class="image-info">
+                        <div class="image-name">${imageData.name}</div>
+                        <div class="image-stats">
+                            <span>📷 ${imageData.width}x${imageData.height}</span>
+                            <span>🏷️ ${imageData.labels} labels</span>
+                        </div>
+                    </div>
+                `;
+                
+                imageCard.querySelector('.image-container').appendChild(canvas);
+                gallery.appendChild(imageCard);
+            });
+            
+            document.getElementById('contentContainer').innerHTML = '';
+            document.getElementById('contentContainer').appendChild(gallery);
+        }
+        
+        function loadImageWithAnnotations(canvas, imageData) {
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                // Limpiar canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Calcular escala para ajustar imagen al canvas
+                const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                const scaledWidth = img.width * scale;
+                const scaledHeight = img.height * scale;
+                const offsetX = (canvas.width - scaledWidth) / 2;
+                const offsetY = (canvas.height - scaledHeight) / 2;
+                
+                // Dibujar imagen
+                ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+                
+                // Dibujar anotaciones
+                imageData.annotations.forEach(ann => {
+                    const x1 = (ann.x1 * scale) + offsetX;
+                    const y1 = (ann.y1 * scale) + offsetY;
+                    const width = (ann.x2 - ann.x1) * scale;
+                    const height = (ann.y2 - ann.y1) * scale;
+                    
+                    // Dibujar rectángulo
+                    ctx.strokeStyle = classes[ann.class_id]?.color || '#ff0000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x1, y1, width, height);
+                    
+                    // Dibujar etiqueta
+                    const className = classes[ann.class_id]?.name || `Clase ${ann.class_id}`;
+                    ctx.fillStyle = classes[ann.class_id]?.color || '#ff0000';
+                    ctx.fillRect(x1, y1 - 20, ctx.measureText(className).width + 10, 20);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(className, x1 + 5, y1 - 5);
+                });
+            };
+            
+            img.src = `/image/${currentSessionData.session_name}/${imageData.name}`;
+        }
+        
+        function openImageModal(imageData, index) {
+            const modal = document.getElementById('imageModal');
+            const modalCanvas = document.getElementById('modalCanvas');
+            const modalImageName = document.getElementById('modalImageName');
+            const modalImageInfo = document.getElementById('modalImageInfo');
+            
+            modalImageName.textContent = imageData.name;
+            
+            // Configurar canvas del modal con tamaño original
+            modalCanvas.width = imageData.width;
+            modalCanvas.height = imageData.height;
+            
+            // Cargar imagen en tamaño completo
+            const ctx = modalCanvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                ctx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                // Dibujar anotaciones en tamaño original
+                imageData.annotations.forEach(ann => {
+                    const x1 = ann.x1;
+                    const y1 = ann.y1;
+                    const width = ann.x2 - ann.x1;
+                    const height = ann.y2 - ann.y1;
+                    
+                    ctx.strokeStyle = classes[ann.class_id]?.color || '#ff0000';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x1, y1, width, height);
+                    
+                    const className = classes[ann.class_id]?.name || `Clase ${ann.class_id}`;
+                    ctx.fillStyle = classes[ann.class_id]?.color || '#ff0000';
+                    ctx.fillRect(x1, y1 - 25, ctx.measureText(className).width + 15, 25);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(className, x1 + 7, y1 - 5);
+                });
+            };
+            
+            img.src = `/image/${currentSessionData.session_name}/${imageData.name}`;
+            
+            // Mostrar información detallada
+            modalImageInfo.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div><strong>Dimensiones:</strong> ${imageData.width}x${imageData.height}px</div>
+                    <div><strong>Anotaciones:</strong> ${imageData.annotations.length}</div>
+                    <div><strong>Posición:</strong> ${index + 1} de ${currentSessionData.images.length}</div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <strong>Detalles de anotaciones:</strong>
+                    ${imageData.annotations.map(ann => `
+                        <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
+                            <span style="color: ${classes[ann.class_id]?.color || '#ff0000'};">●</span>
+                            ${classes[ann.class_id]?.name || `Clase ${ann.class_id}`} - 
+                            Centro: (${ann.x_center.toFixed(3)}, ${ann.y_center.toFixed(3)}) - 
+                            Tamaño: ${ann.width.toFixed(3)} × ${ann.height.toFixed(3)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        function refreshData() {
+            loadSessions();
+            const sessionSelect = document.getElementById('sessionSelect');
+            if (sessionSelect.value) {
+                setTimeout(() => loadSession(), 500);
+            }
+        }
+        
+        // Event listeners
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('imageModal').style.display = 'none';
+        };
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        };
+        
+        // Inicialización
+        // Función para actualizar información del usuario
+        function updateUserInfo(user) {
+            // Actualizar información del usuario en el header
+            const userBadge = document.querySelector('.user-badge');
+            if (userBadge) {
+                userBadge.innerHTML = `
+                    👤 ${user.username}
+                    ${(user && user.is_admin) ? '<span class="admin-badge">ADMIN</span>' : ''}
+                `;
+            }
+            
+            // Mostrar botón de logout si no existe
+            const userInfo = document.querySelector('.user-info');
+            if (userInfo && !userInfo.querySelector('.logout-btn')) {
+                const logoutBtn = document.createElement('button');
+                logoutBtn.className = 'logout-btn';
+                logoutBtn.textContent = 'Cerrar Sesión';
+                logoutBtn.onclick = logout;
+                userInfo.appendChild(logoutBtn);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verificar que el token sea válido y cargar info del usuario
+            fetch('/auth/profile', {
+                headers: getAuthHeaders()
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token inválido');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Actualizar información del usuario en la página
+                    updateUserInfo(data.user);
+                    loadSessions();
+                } else {
+                    throw new Error('Error de autenticación');
+                }
+            })
+            .catch(error => {
+                console.error('Error de autenticación:', error);
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('token_type');
+                window.location.href = '/login';
+            });
         });
+        
+        // Función logout común
+        async function logout() {
+            try {
+                // Intentar logout en el servidor
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.log('Error en logout del servidor:', error);
+            }
+            
+            // Limpiar localStorage y redirigir
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
     </script>
 </body>
 </html>
