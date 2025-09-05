@@ -196,7 +196,7 @@ ORDER BY last_updated DESC;
 ### 1. Base de Datos MySQL
 ```bash
 # Ejecutar script de configuración
-mysql -u tu-usuario -p yolo_annotator < mysql_setup.sql
+mysql -u tu-usuario -p yolo_annotator < mysql_simple_setup.sql
 ```
 
 ### 2. Configuración de la Aplicación

@@ -12,13 +12,13 @@
 #### Opción A: Importar el Archivo Completo
 1. En phpMyAdmin, haz clic en **"Importar"** en el menú superior
 2. Selecciona **"Elegir archivo"** 
-3. Busca y selecciona el archivo `mysql_setup.sql`
+3. Busca y selecciona el archivo `mysql_simple_setup.sql`
 4. Asegúrate de que el formato esté en **"SQL"**
 5. Haz clic en **"Continuar"**
 
 #### Opción B: Ejecutar Manualmente
 1. Haz clic en **"SQL"** en el menú superior
-2. Copia todo el contenido del archivo `mysql_setup.sql`
+2. Copia todo el contenido del archivo `mysql_simple_setup.sql`
 3. Pégalo en el área de texto
 4. Haz clic en **"Continuar"**
 

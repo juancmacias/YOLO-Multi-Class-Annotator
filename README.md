@@ -143,8 +143,17 @@ YOLO-Multi-Class-Annotator/
 │   ├── PRODUCTION.md     # Mejores prácticas para producción
 │   ├── MYSQL_PHPMYADMIN_GUIDE.md  # Configuración MySQL
 │   └── ...               # Más guías técnicas
+├── tests/                # 🧪 Suite completa de tests
+│   ├── __init__.py       # Configuración del paquete de tests
+│   ├── conftest.py       # Fixtures compartidas de pytest
+│   ├── test_auth.py      # Tests de autenticación
+│   ├── test_mysql.py     # Tests de base de datos
+│   ├── test_token.py     # Tests de JWT
+│   ├── run_unit_tests.py # Script para tests unitarios
+│   └── README.md         # Documentación de tests
 ├── annotations/          # Datos de usuarios (se crea automáticamente)
-└── temp/                # Archivos temporales
+├── temp/                # Archivos temporales
+└── pyproject.toml       # Configuración de pytest
 ```
 
 ## 🔧 Configuración

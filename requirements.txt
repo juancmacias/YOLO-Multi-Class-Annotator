@@ -29,6 +29,11 @@ pydantic[email]==2.11.7           # Validación de datos y emails
 python-dotenv==1.0.1       # Cargar variables de entorno desde archivo .env
 pandas==2.2.3              # Análisis de datos (usado para estadísticas de sesiones)
 
+# ===== TESTING =====
+pytest==8.3.4              # Framework de testing moderno para Python
+pytest-asyncio==0.25.0     # Soporte para tests asíncronos en pytest
+pytest-cov==6.0.0          # Coverage de código para los tests
+
 # ===== ADICIONALES OPCIONALES =====
 # aiofiles==23.2.1         # Para manejo asíncrono de archivos (futuras mejoras)
 # requests==2.31.0         # Cliente HTTP para integraciones externas

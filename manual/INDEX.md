@@ -11,11 +11,15 @@ Esta carpeta contiene toda la documentación técnica y guías del proyecto YOLO
 ### 🔧 Configuración Técnica
 - **[MYSQL_PHPMYADMIN_GUIDE.md](./MYSQL_PHPMYADMIN_GUIDE.md)** - Configuración de MySQL y phpMyAdmin
 - **[MYSQL_ERROR_FIX.md](./MYSQL_ERROR_FIX.md)** - Solución de problemas comunes con MySQL
+- **[README_MYSQL_SCRIPTS.md](./README_MYSQL_SCRIPTS.md)** - Script de base de datos MySQL
 - **[MIGRACION_DATABASE.md](./MIGRACION_DATABASE.md)** - Guía de migración de base de datos
 
 ### 🔐 Autenticación y Seguridad
 - **[IMPLEMENTACION_AUTH_FASTAPI.md](./IMPLEMENTACION_AUTH_FASTAPI.md)** - Implementación del sistema de autenticación JWT
 - **[ANALISIS_MIGRACION_AUTH.md](./ANALISIS_MIGRACION_AUTH.md)** - Análisis de la migración del sistema de autenticación
+
+### 🧪 Testing y Calidad
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Guía completa de testing y validación del código
 
 ### 🎯 Funcionalidades
 - **[CLASES_PERSONALIZADAS.md](./CLASES_PERSONALIZADAS.md)** - Guía de clases de anotación personalizadas

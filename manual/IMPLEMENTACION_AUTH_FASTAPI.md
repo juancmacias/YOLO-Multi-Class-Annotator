@@ -4,7 +4,7 @@
 
 ```
 YOLO-Multi-Class-Annotator/
-├── app_simple.py                 # App principal (modificado)
+├── app_auth.py                   # App principal con autenticación JWT
 ├── requirements.txt              # + nuevas dependencias auth
 ├── auth/                         # Nuevo módulo de autenticación
 │   ├── __init__.py
@@ -341,10 +341,10 @@ async def get_current_user_info(
 
 ---
 
-## 🔄 Modificaciones en app_simple.py
+## 🔄 Modificaciones en app_auth.py
 
 ```python
-# Cambios principales en app_simple.py
+# Cambios principales en app_auth.py
 
 # Imports adicionales
 from auth.dependencies import get_current_user, get_optional_user
