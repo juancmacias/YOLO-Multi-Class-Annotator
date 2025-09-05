@@ -4,151 +4,44 @@
     <meta charset="UTF-8">
     <title>Gestión de Sesiones YOLO</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        .augmentation-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .augmentation-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .variant-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .variant-card {
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .variant-card:hover {
-            border-color: #007bff;
-            background-color: #f8f9fa;
-        }
-        
-        .variant-card.selected {
-            border-color: #28a745;
-            background-color: #d4edda;
-        }
-        
-        .variant-card h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .variant-card p {
-            margin: 0;
-            color: #666;
-            font-size: 0.9em;
-        }
-        
-        .progress-container {
-            margin: 20px 0;
-            display: none;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            border-radius: 10px;
-            background-color: #f0f0f0;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background-color: #28a745;
-            transition: width 0.3s ease;
-            width: 0%;
-        }
-        
-        .progress-text {
-            text-align: center;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .modal-buttons button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        
-        .btn-primary:hover, .btn-success:hover {
-            opacity: 0.9;
-        }
-        
-        .btn-secondary:hover {
-            opacity: 0.8;
-        }
-        
-        .augment-btn {
-            background-color: #ffc107;
-            color: #333;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-left: 5px;
-        }
-        
-        .augment-btn:hover {
-            background-color: #e0a800;
-        }
-    </style>
 </head>
-<body>
+<body class="sessions-page">
     <div class="container">
-        <h1 class="title">🗂️ Gestión de Sesiones</h1>
-        <div id="sessionsList" class="sessions-panel">
-            <!-- Aquí se renderiza la lista de sesiones vía JS -->
+        <div class="header">
+            <a href="/" class="back-btn">← Volver al inicio</a>
+            <h1>� Gestión de Sesiones</h1>
+            <p>Administra tus proyectos de anotación</p>
         </div>
+        
+        <div id="sessionsList" class="sessions-panel">
+            {% if sessions %}
+                <div class="sessions-grid">
+                    {% for session in sessions %}
+                    <div class="session-card">
+                        <h3>📁 {{ session.name }}</h3>
+                        <div class="session-stats">
+                            <span>🖼️ {{ session.images }} imágenes</span>
+                            <span>🏷️ {{ session.labels }} labels</span>
+                        </div>
+                        <div class="session-actions">
+                            <a href="/visualizer?session={{ session.name }}" class="btn-visualize">👁️ Visualizar</a>
+                            <button onclick="openAugmentationModal('{{ session.name }}')" class="augment-btn">🔄 Augmentar</button>
+                            <button onclick="deleteSession('{{ session.name }}')" class="btn-delete">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-sessions">
+                    <h3>📂 No hay sesiones</h3>
+                    <p>Para crear una sesión, sube imágenes a:</p>
+                    <code>annotations/nombre_sesion/images/</code>
+                    <br><br>
+                    <button onclick="createExampleSession()" class="btn-create">➕ Crear Sesión de Ejemplo</button>
+                </div>
+            {% endif %}
+        </div>
+        
         <button onclick="refreshSessions()" class="save-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
     </div>
 
@@ -180,5 +73,20 @@
     </div>
 
     <script src="/static/sessions.js?v=2024"></script>
+    <script>
+        // Funciones adicionales específicas para esta página
+        function createExampleSession() {
+            alert('💡 Para crear una sesión:\\n\\n' +
+                  '1. Crea la carpeta: annotations/mi_sesion/\\n' +
+                  '2. Crea subcarpeta: annotations/mi_sesion/images/\\n' +
+                  '3. Sube tus imágenes JPG/PNG\\n' +
+                  '4. Recarga esta página');
+        }
+        
+        // Recargar página al hacer clic en actualizar
+        function refreshSessions() {
+            window.location.reload();
+        }
+    </script>
 </body>
 </html>
