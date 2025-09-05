@@ -272,12 +272,12 @@ async def auth_middleware(request: Request, call_next):
     return response
 ```
 
-### 🔥 Opción SaaS: FastAPI + Supabase
-**Tiempo: 2-3 días | Costo: ~$25/mes**
+### 🔥 Opción Recomendada: FastAPI + MySQL
+**Tiempo: 1-2 días | Costo: Gratis**
 
-- **Auth completo**: Login, registro, OAuth, 2FA built-in
-- **Database**: PostgreSQL managed con Row Level Security
-- **Storage**: Para imágenes grandes en la nube
+- **Auth completo**: Login, registro con JWT tokens
+- **Database**: MySQL local o cloud con excelente rendimiento
+- **Storage**: Para imágenes en servidor local o cloud storage
 - **Real-time**: WebSockets para colaboración
 
 ---

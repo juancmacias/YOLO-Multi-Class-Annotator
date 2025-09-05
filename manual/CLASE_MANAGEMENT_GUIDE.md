@@ -61,7 +61,27 @@ En la interfaz del anotador, busca el botón **"Gestionar Clases"** en la barra 
 
 ## 🗃️ Estructura de Base de Datos
 
-### Tabla: `annotation_classes` (PostgreSQL) / `AnnotationClasses` (SQL Server)
+### Tabla: `annotation_classes` (MySQL)
+
+```sql
+-- Estructura de tabla MySQL
+CREATE TABLE annotation_classes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    color VARCHAR(7) DEFAULT '#ff0000',
+    user_id INT NOT NULL,
+    session_name VARCHAR(100) NOT NULL,
+    session_hash VARCHAR(64),
+    is_global BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_session_name (session_name),
+    INDEX idx_user_id (user_id),
+    INDEX idx_session_hash (session_hash)
+);
+```
 
 ```sql
 -- Campos principales
@@ -128,61 +148,81 @@ POST /api/classes/reset-default?session_name={session_name}
 
 ### Estadísticas por Usuario
 ```sql
--- PostgreSQL
-SELECT * FROM user_class_statistics WHERE user_id = $1;
-
--- SQL Server  
-SELECT * FROM vw_ClassStatsByUser WHERE UserId = @user_id;
+-- MySQL - Estadísticas por usuario
+SELECT 
+    u.username,
+    COUNT(ac.id) as total_classes,
+    COUNT(DISTINCT ac.session_name) as sessions_used,
+    AVG(CASE WHEN ac.is_global THEN 1 ELSE 0 END) as global_ratio
+FROM users u
+LEFT JOIN annotation_classes ac ON u.id = ac.user_id AND ac.is_active = TRUE
+WHERE u.id = ?
+GROUP BY u.username;
 ```
 
 ### Clases Más Populares
 ```sql
--- PostgreSQL
-SELECT * FROM popular_classes_view ORDER BY used_by_users DESC;
-
--- SQL Server
-SELECT * FROM vw_PopularClasses ORDER BY UsedByUsers DESC;
+-- MySQL - Clases más utilizadas
+SELECT 
+    name,
+    color,
+    COUNT(DISTINCT user_id) as used_by_users,
+    COUNT(DISTINCT session_name) as used_in_sessions
+FROM annotation_classes
+WHERE is_active = TRUE
+GROUP BY name, color
+ORDER BY used_by_users DESC, used_in_sessions DESC
+LIMIT 10;
 ```
 
 ### Resumen de Gestión
 ```sql
--- SQL Server
-SELECT * FROM vw_ClassManagementSummary WHERE CreatedBy = @username;
+-- MySQL - Resumen completo
+SELECT 
+    u.username as created_by,
+    ac.session_name,
+    COUNT(ac.id) as classes_count,
+    MIN(ac.created_at) as first_class_date,
+    MAX(ac.updated_at) as last_updated
+FROM users u
+JOIN annotation_classes ac ON u.id = ac.user_id
+WHERE ac.is_active = TRUE
+GROUP BY u.username, ac.session_name
+ORDER BY last_updated DESC;
 ```
 
 ## 🔧 Configuración de Despliegue
 
-### 1. Base de Datos PostgreSQL/Supabase
+### 1. Base de Datos MySQL
 ```bash
-# Ejecutar script de migración
-psql -h tu-host -U tu-usuario -d tu-db -f supabase_setup.sql
+# Ejecutar script de configuración
+mysql -u tu-usuario -p yolo_annotator < mysql_setup.sql
 ```
 
-### 2. Base de Datos SQL Server
-```bash
-# Ejecutar script de migración
-sqlcmd -S tu-servidor -d tu-db -i sqlserver_setup.sql
-```
-
-### 3. Configuración de la Aplicación
+### 2. Configuración de la Aplicación
 ```python
-# En el archivo de configuración
-DATABASE_URL = "postgresql://user:password@host/db"
-# o
-DATABASE_URL = "mssql+pyodbc://user:password@host/db?driver=ODBC+Driver+17+for+SQL+Server"
+# En el archivo .env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=yolo_user
+DB_PASSWORD=tu_password
+DB_NAME=yolo_annotator
 ```
 
-## 🛠️ Stored Procedures (SQL Server)
+---
 
-### Crear Clases por Defecto
-```sql
-EXEC sp_CreateDefaultClasses @UserId = 1, @SessionName = 'mi_session';
-```
+## 🎯 Resumen
 
-### Obtener Clases de Usuario
-```sql
-EXEC sp_GetUserClasses @UserId = 1, @SessionName = 'mi_session', @IncludeGlobal = 1;
-```
+El sistema de gestión de clases de anotación de YOLO Multi-Class Annotator proporciona:
+
+- ✅ **6 clases predefinidas** con colores diferenciados
+- ✅ **Clases personalizadas** por usuario y sesión
+- ✅ **API REST completa** para gestión dinámica
+- ✅ **Base de datos MySQL** robusta y escalable
+- ✅ **Interfaz web** intuitiva y responsive
+- ✅ **Isolación por sesiones** para múltiples usuarios
+
+**¡Sistema completo y listo para usar!** 🚀
 
 ### Estadísticas de Clases
 ```sql

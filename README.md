@@ -48,7 +48,18 @@ python app_auth.py
 http://localhost:8002
 ```
 
-## 🔐 Primer Uso
+## � Documentación Completa
+
+Toda la documentación técnica está organizada en la carpeta [`manual/`](./manual/):
+
+- **[📋 Índice completo](./manual/INDEX.md)** - Navegación por toda la documentación
+- **[🚀 Guía de instalación](./manual/INSTALACION.md)** - Instalación paso a paso detallada
+- **[🔧 Configuración MySQL](./manual/MYSQL_PHPMYADMIN_GUIDE.md)** - Setup de base de datos
+- **[🔐 Sistema de autenticación](./manual/IMPLEMENTACION_AUTH_FASTAPI.md)** - JWT y seguridad
+- **[🎯 Clases personalizadas](./manual/CLASES_PERSONALIZADAS.md)** - Gestión avanzada
+- **[🚀 Despliegue en producción](./manual/PRODUCTION.md)** - Mejores prácticas
+
+## �🔐 Primer Uso
 
 1. **Registro inicial**: La primera cuenta creada será automáticamente administrador
 2. **Login**: Inicia sesión con tus credenciales  
@@ -126,6 +137,12 @@ YOLO-Multi-Class-Annotator/
 │   ├── styles.css        # Estilos principales
 │   ├── sessions.js       # JavaScript para gestión de sesiones
 │   └── ...
+├── manual/               # 📚 Documentación técnica completa
+│   ├── INDEX.md          # Índice de toda la documentación
+│   ├── INSTALACION.md    # Guía de instalación detallada
+│   ├── PRODUCTION.md     # Mejores prácticas para producción
+│   ├── MYSQL_PHPMYADMIN_GUIDE.md  # Configuración MySQL
+│   └── ...               # Más guías técnicas
 ├── annotations/          # Datos de usuarios (se crea automáticamente)
 └── temp/                # Archivos temporales
 ```
