@@ -99,7 +99,7 @@ def image_to_base64(pil_image):
 # ============================================================================
 @app.get("/", response_class=HTMLResponse)
 async def main(request: Request):
-    return templates.TemplateResponse("index_simple.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 # ============================================================================
 # ENDPOINT DE AUGMENTACIÓN - Funcional
@@ -749,7 +749,7 @@ async def sessions_page(request: Request):
 @app.get("/annotator", response_class=HTMLResponse)
 async def annotator_page(request: Request):
     """Anotador clásico para crear datasets"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("annotator.html", {"request": request})
 
 @app.get("/visualizer", response_class=HTMLResponse)
 async def visualizer_page(request: Request, session: str = None):

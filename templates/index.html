@@ -3,233 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <title>YOLO Multi-Class Annotator</title>
-    <link rel="stylesheet" href="/static/styles.css?v=2024-augment">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .main-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+        .title {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .tool-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px 20px;
+            border-radius: 15px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .tool-card.augmentation {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            font-size: 1.1em;
+            border: 3px solid #ff8c00;
+            animation: pulse-glow 2s infinite;
+        }
+        .tool-card.sessions {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        .tool-card.visualizer {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+        .tool-card.annotator {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+        }
+        .tool-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .tool-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .tool-desc {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { 
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6), 0 0 20px rgba(255, 140, 0, 0.3); 
+            }
+            50% { 
+                box-shadow: 0 4px 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 140, 0, 0.5); 
+            }
+        }
+        .footer {
+            margin-top: 40px;
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="title">🎯 YOLO Multi-Class Annotator
-            <button id="helpBtn" class="help-btn" title="Ver instrucciones">❓</button>
-        </h1>
+    <div class="main-container">
+        <h1 class="title">🎯 YOLO Multi-Class Annotator</h1>
         
-        <!-- ⭐ PANEL DE HERRAMIENTAS AVANZADAS ⭐ -->
-        <div id="advanced-tools" style="
-            text-align: center; 
-            margin: 20px auto; 
-            padding: 20px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            border-radius: 15px; 
-            border: 3px solid #4834d4;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            max-width: 800px;
-        ">
-            <h2 style="
-                margin: 0 0 20px 0; 
-                color: white; 
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-                font-size: 24px;
-            ">🚀 HERRAMIENTAS AVANZADAS</h2>
-            
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <a href="/sessions" target="_top" style="
-                    background: linear-gradient(45deg, #28a745, #20c997); 
-                    color: white; 
-                    text-decoration: none; 
-                    padding: 15px 20px; 
-                    border-radius: 10px; 
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-                    border: 2px solid #ffffff50;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    📂 GESTIONAR SESIONES
-                </a>
-                
-                <a href="/real-sessions" target="_top" style="
-                    background: linear-gradient(45deg, #ffc107, #fd7e14); 
-                    color: #333; 
-                    text-decoration: none; 
-                    padding: 15px 20px; 
-                    border-radius: 10px; 
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6);
-                    border: 3px solid #ff8c00;
-                    font-size: 16px;
-                    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
-                    animation: pulse-glow 2s infinite;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px) scale(1.05)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-                    🔄 AUGMENTAR DATASET ⭐
-                </a>
-                
-                <a href="/visualizer" target="_top" style="
-                    background: linear-gradient(45deg, #17a2b8, #138496); 
-                    color: white; 
-                    text-decoration: none; 
-                    padding: 15px 20px; 
-                    border-radius: 10px; 
-                    font-weight: bold;
-                    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
-                    border: 2px solid #ffffff50;
-                    transition: all 0.3s ease;
-                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                    👁️ VISUALIZADOR
-                </a>
-            </div>
-            
-            <p style="
-                color: white; 
-                margin: 15px 0 0 0; 
-                font-size: 14px; 
-                opacity: 0.9;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            ">
-                💡 Usa estas herramientas para gestionar tus datasets y aplicar augmentaciones
-            </p>
+        <div class="description">
+            <p>Sistema completo para anotación y aumento de datos para modelos YOLO</p>
+            <p><strong>¡Nuevo!</strong> Sistema de augmentación de datasets con 6 variantes diferentes</p>
         </div>
-
-        <style>
-            @keyframes pulse-glow {
-                0%, 100% { 
-                    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.6), 0 0 20px rgba(255, 140, 0, 0.3); 
-                }
-                50% { 
-                    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 140, 0, 0.5); 
-                }
-            }
-        </style>
         
-        <!-- Modal de Instrucciones -->
-        <div id="instructionsModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>📚 Instrucciones de Uso</h2>
-                <div class="instructions-content">
-                    <h3>🚀 Pasos para anotar:</h3>
-                    <ol>
-                        <li><strong>📤 Sube tu imagen</strong> - Formatos soportados: JPG, PNG, WebP, GIF, BMP</li>
-                        <li><strong>⚙️ Configura parámetros</strong> - Tamaño del canvas, posición, fondo</li>
-                        <li><strong>🖼️ Genera el canvas</strong> - Click en "Generar" para crear el lienzo</li>
-                        <li><strong>🎯 Selecciona una clase</strong> - Elige el tipo de objeto a anotar</li>
-                        <li><strong>🖱️ Arrastra para anotar</strong> - Crea bounding boxes sobre los objetos</li>
-                        <li><strong>🔄 Repite para múltiples objetos</strong> - Anota todos los objetos de la imagen</li>
-                        <li><strong>💾 Guarda las anotaciones</strong> - Formato YOLO estándar para entrenamiento</li>
-                    </ol>
-                    <h3>🎨 Clases disponibles:</h3>
-                    <div class="classes-preview">
-                        <div class="class-item"><span style="background: #ff0000;"></span> Objeto 1</div>
-                        <div class="class-item"><span style="background: #00ff00;"></span> Objeto 2</div>
-                        <div class="class-item"><span style="background: #0000ff;"></span> Objeto 3</div>
-                        <div class="class-item"><span style="background: #ffff00;"></span> Objeto 4</div>
-                        <div class="class-item"><span style="background: #ff00ff;"></span> Objeto 5</div>
-                        <div class="class-item"><span style="background: #00ffff;"></span> Objeto 6</div>
-                    </div>
-                    <h3>⚡ Atajos de teclado:</h3>
-                    <ul>
-                        <li><kbd>1-6</kbd> - Seleccionar clase rápida</li>
-                        <li><kbd>Escape</kbd> - Cancelar anotación actual</li>
-                        <li><kbd>Delete</kbd> - Eliminar anotación seleccionada</li>
-                    </ul>
-                    <h3>📁 Gestión de sesiones:</h3>
-                    <ul>
-                        <li><strong>💾 Descargar:</strong> Obtén un ZIP con formato YOLO listo para entrenar</li>
-                        <li><strong>👁️ Visualizar:</strong> Ve todas las anotaciones en galería</li>
-                        <li><strong>� Augmentar:</strong> Multiplica tu dataset con variantes de imágenes</li>
-                        <li><strong>�🗑️ Eliminar:</strong> Borra sesión completa (irreversible)</li>
-                    </ul>
-                    <h3>🎨 Augmentación de Dataset:</h3>
-                    <ul>
-                        <li><strong>Negativo:</strong> Invierte colores de las imágenes</li>
-                        <li><strong>Brillo:</strong> Aumenta luminosidad 50%</li>
-                        <li><strong>Espejo:</strong> Volteo horizontal (ajusta etiquetas YOLO automáticamente)</li>
-                        <li><strong>Rotación:</strong> Gira imágenes 15 grados</li>
-                        <li><strong>Desenfoque:</strong> Aplica filtro gaussiano suave</li>
-                        <li><strong>Contraste:</strong> Aumenta contraste 30%</li>
-                    </ul>
-                </div>
-            </div>
+        <div class="tools-grid">
+            <a href="/real-sessions" class="tool-card augmentation">
+                <span class="tool-icon">🔄</span>
+                <div class="tool-title">AUGMENTAR DATASET ⭐</div>
+                <div class="tool-desc">Aplica transformaciones automáticas a tus imágenes: negativo, brillo, espejo, rotación, desenfoque y contraste</div>
+            </a>
+            
+            <a href="/sessions" class="tool-card sessions">
+                <span class="tool-icon">📂</span>
+                <div class="tool-title">GESTIONAR SESIONES</div>
+                <div class="tool-desc">Administra tus proyectos de anotación y organiza tus datasets</div>
+            </a>
+            
+            <a href="/visualizer" class="tool-card visualizer">
+                <span class="tool-icon">👁️</span>
+                <div class="tool-title">VISUALIZADOR</div>
+                <div class="tool-desc">Explora y visualiza tus anotaciones de forma interactiva</div>
+            </a>
+            
+            <a href="/annotator" class="tool-card annotator">
+                <span class="tool-icon">🏷️</span>
+                <div class="tool-title">ANOTADOR CLÁSICO</div>
+                <div class="tool-desc">Herramienta de anotación manual para crear datasets</div>
+            </a>
         </div>
-
-        <!-- Panel principal -->
-        <div class="two-column">
-            <div class="main-panel">
-                <!-- Formulario de carga de imagen -->
-                <form id="imageForm" enctype="multipart/form-data">
-                    <div class="controls">
-                        <div class="control-group">
-                            <label for="sessionName">Sesión:</label>
-                            <input type="text" id="sessionName" name="session_name" placeholder="Nombre de sesión" value="default">
-                            <button type="button" id="refreshSessions">🔄</button>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="imageFile">Imagen:</label>
-                            <input type="file" id="imageFile" name="image" accept="image/*" required>
-                            <small style="color: #666; font-size: 12px;">
-                                Soporta: JPG, PNG, WebP, GIF, BMP (se redimensiona automáticamente)
-                            </small>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="size">Tamaño:</label>
-                            <select id="size" name="size">
-                                <option value="320">320x320</option>
-                                <option value="640">640x640</option>
-                            </select>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="xPos">Pos X:</label>
-                            <input type="range" id="xPos" name="x" min="0" max="640" value="0">
-                            <span id="xValue">0</span>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label for="yPos">Pos Y:</label>
-                            <input type="range" id="yPos" name="y" min="0" max="640" value="0">
-                            <span id="yValue">0</span>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>
-                                <input type="checkbox" id="randomBg" name="random_bg" checked> Fondo aleatorio
-                            </label>
-                        </div>
-                        
-                        <button type="submit">🖼️ Generar</button>
-                    </div>
-                </form>
-
-                <!-- Canvas de imagen -->
-                <canvas id="imageCanvas" style="display: none; border: 1px solid #ddd; margin-top: 20px; cursor: crosshair;"></canvas>
-                
-                <!-- Controles de anotación -->
-                <div id="annotationControls" style="display: none; margin-top: 20px;">
-                    <h3>🎯 Seleccionar Clase:</h3>
-                    <div id="classButtons" class="class-buttons"></div>
-                    
-                    <h3>📝 Anotaciones:</h3>
-                    <div id="annotationsList" class="annotations-list">
-                        <p>Sin anotaciones aún</p>
-                    </div>
-                    
-                    <div class="annotation-actions">
-                        <input type="text" id="filename" placeholder="Nombre del archivo" style="margin-right: 10px; padding: 8px;">
-                        <button onclick="saveAnnotations()" class="save-btn">💾 Guardar</button>
-                        <button onclick="clearAnnotations()" class="clear-btn">🗑️ Limpiar</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel de sesiones -->
-            <div class="sessions-panel">
-                <h3>📂 Sesiones</h3>
-                <div id="sessionsList"></div>
-                <button onclick="refreshSessions()" class="save-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
-            </div>
+        
+        <div class="footer">
+            <p>💡 <strong>Recomendado:</strong> Usa el augmentador para multiplicar tu dataset antes del entrenamiento</p>
+            <p>Versión 2.0 - Con sistema de augmentación integrado</p>
         </div>
     </div>
     
-    <script src="/static/application.js"></script>
-    <script src="/static/main.js"></script>
+    <script>
+        function showAnnotator() {
+            alert('🚧 El anotador clásico estará disponible próximamente.\n\n💡 Mientras tanto, usa:\n• Augmentador: Para crear variantes de imágenes\n• Sesiones: Para gestionar proyectos\n• Visualizador: Para explorar datos');
+        }
+    </script>
 </body>
 </html>
