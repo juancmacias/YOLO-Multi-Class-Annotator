@@ -2,37 +2,66 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Visualizador de Anotaciones YOLO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador - YOLO Annotator</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body>
+<body class="visualizer-page">
     <div class="container">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 id="session-title">🎯 Dataset Visualizer</h1>
-            <div id="session-stats" style="color: #666; margin-top: 10px;"></div>
+        <div class="header">
+            <h1>👁️ Visualizador de Datasets</h1>
+            <a href="/" class="back-btn">← Volver al inicio</a>
         </div>
         
-        <div style="text-align: center; margin-bottom: 20px;">
-            <a href="/" style="background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">← Volver al Anotador</a>
-            <button id="reload-btn" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">🔄 Recargar</button>
+        <div class="controls">
+            <label>📂 Seleccionar sesión:</label>
+            <select id="sessionSelect" onchange="loadSession()">
+                <option value="">Selecciona una sesión...</option>
+                {% for session in sessions %}
+                <option value="{{ session }}" {% if session == current_session %}selected{% endif %}>{{ session }}</option>
+                {% endfor %}
+            </select>
+            <button onclick="refreshData()">🔄 Actualizar</button>
         </div>
         
-        <div class="legend">
-            <div class="legend-title">🎨 Leyenda de Clases:</div>
-            <div class="legend-items" id="legend-items"></div>
-        </div>
-        
-        <div id="loading" style="display: none; text-align: center; padding: 40px;">
-            <div>Cargando datos de la sesión...</div>
-        </div>
-        
-        <div id="content">
-            <div class="images-grid" id="images-container">
-                <div class="loading">Usa el anotador principal para seleccionar una sesión a visualizar</div>
+        <div id="statsContainer" style="display: none;">
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalImages">0</span>
+                    <span class="stat-label">Imágenes</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalLabels">0</span>
+                    <span class="stat-label">Labels</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="avgLabels">0</span>
+                    <span class="stat-label">Promedio Labels/Imagen</span>
+                </div>
             </div>
+        </div>
+        
+        <div id="contentContainer">
+            {% if current_session %}
+                <div class="loading">
+                    <h3>⏳ Cargando imágenes...</h3>
+                    <p>Procesando dataset de {{ current_session }}</p>
+                </div>
+            {% else %}
+                <div class="no-session">
+                    <h3>📂 Selecciona una sesión para visualizar</h3>
+                    <p>Usa el selector de arriba para elegir qué dataset explorar</p>
+                </div>
+            {% endif %}
         </div>
     </div>
     
     <script src="/static/visualizer.js"></script>
+    <script>
+        // Inicializar el visualizador con la sesión actual
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeVisualizer('{{ current_session or "" }}');
+        });
+    </script>
 </body>
 </html>
