@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  yolo-annotator:
+    build: .
+    container_name: yolo-annotator
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    restart: unless-stopped

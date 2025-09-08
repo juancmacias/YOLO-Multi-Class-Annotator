@@ -17,7 +17,7 @@ numpy==1.26.4              # Operaciones numéricas y arrays para procesamiento 
 
 # ===== BASE DE DATOS =====
 sqlalchemy==2.0.41         # ORM para manejo de base de datos de forma pythónica
-pymysql==1.4.6             # Driver MySQL para conectar con la base de datos
+pymysql==1.1.2             # Driver MySQL para conectar con la base de datos
 cryptography==45.0.5      # Biblioteca de criptografía (requerida por PyMySQL)
 
 # ===== AUTENTICACIÓN Y SEGURIDAD =====

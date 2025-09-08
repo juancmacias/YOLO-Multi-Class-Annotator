@@ -35,7 +35,7 @@ cp .env.example .env
 
 4. **Configurar MySQL:**
    - Instalar MySQL Server
-   - Crear base de datos `yolo_annotator`
+   - Crear base de datos `tu_data_base`
    - Configurar credenciales en `.env`
 
 5. **Ejecutar la aplicación:**
